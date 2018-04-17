@@ -1,0 +1,6 @@
+
+docker run --rm -it -v /home/david/fashionAI/Gluon-FashionAI-Attributes:/app-dev -v /data/fashion/data/attribute/datasets_david:/mnt/data/attr mxnet-cu90/python:1.2.0-roialign
+
+docker run --rm -it -v /home/david/fashionAI/Gluon-FashionAI-Attributes:/app-dev -v /data/fashion/data/attribute/datasets_david:/mnt/data/attr mxnet/python:1.1.0_gpu_cuda9
+
+python3.5 train_task.py --task collar_design_labels --model resnet50_v2 --num-gpus 4 -j 64 -b 64 --epochs 40
