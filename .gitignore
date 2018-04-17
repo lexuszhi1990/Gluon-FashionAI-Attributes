@@ -5,4 +5,5 @@ data/*
 *.swp
 .ipynb_checkpoints
 submission
+pretrained_model
 
