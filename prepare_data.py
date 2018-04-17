@@ -5,8 +5,12 @@ import os, shutil, random
 # Read label.csv
 # For each task, make folders, and copy picture to corresponding folders
 
-label_dir = 'data/base/Annotations/label.csv'
-warmup_label_dir = 'data/web/Annotations/skirt_length_labels.csv'
+# root_path = '/data/fashion/data/attribute/web'
+root_path = '/mnt/data/attr'
+
+label_dir = os.path.join(root_path, 'base', 'Annotations/label.csv')
+warmup_label_dir = os.path.join(root_path, 'web', 'Annotations/skirt_length_labels.csv')
+
 
 label_dict = {'coat_length_labels': [],
               'lapel_design_labels': [],
@@ -45,7 +49,7 @@ for task, path_label in label_dict.items():
     random.shuffle(path_label)
     for path, label in path_label:
         label_index = list(label).index('y')
-        src_path = os.path.join('data/base', path)
+        src_path = os.path.join(root_path, 'base', path)
         if train_count < n * 0.9:
             shutil.copy(src_path,
                         os.path.join('data/train_valid', task, 'train', str(label_index)))
@@ -72,7 +76,7 @@ for task, path_label in label_dict.items():
     random.shuffle(path_label)
     for path, label in path_label:
         label_index = list(label).index('y')
-        src_path = os.path.join('data/web', path)
+        src_path = os.path.join(root_path, 'web', path)
         if train_count < n * 0.9:
             shutil.copy(src_path,
                         os.path.join('data/train_valid', task, 'train', str(label_index)))

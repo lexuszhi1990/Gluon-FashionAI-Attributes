@@ -16,7 +16,7 @@ def parse_args():
                         help='name of the pretrained model from model zoo.')
     parser.add_argument('-j', '--workers', dest='num_workers', default=4, type=int,
                         help='number of preprocessing workers')
-    parser.add_argument('--num-gpus', default=0, type=int,
+    parser.add_argument('--num-gpus', default='', type=str,
                         help='number of gpus to use, 0 indicates cpu only')
     parser.add_argument('--epochs', default=40, type=int,
                         help='number of training epochs')
@@ -126,7 +126,7 @@ def train():
     logging.info('Start Training for Task: %s\n' % (task))
 
     # Initialize the net with pretrained model
-    finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True)
+    finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True, root='./pretrained_model')
     with finetune_net.name_scope():
         finetune_net.output = nn.Dense(task_num_class)
     finetune_net.output.initialize(init.Xavier(), ctx = ctx)
@@ -191,7 +191,7 @@ def train():
 
         val_acc, val_map, val_loss = validate(finetune_net, val_data, ctx)
 
-        logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1f' %
+        logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                  (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
 
     logging.info('\n')
@@ -248,10 +248,10 @@ wd = args.wd
 lr_factor = args.lr_factor
 lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
 
-num_gpus = args.num_gpus
+num_gpus = args.num_gpus.split(',')
 num_workers = args.num_workers
-ctx = [mx.gpu(i) for i in range(num_gpus)] if num_gpus > 0 else [mx.cpu()]
-batch_size = batch_size * max(num_gpus, 1)
+ctx = [mx.gpu(int(i)) for i in num_gpus] if len(num_gpus) > 0 else [mx.cpu()]
+batch_size = batch_size * max(len(num_gpus), 1)
 
 logging.basicConfig(level=logging.INFO,
                     handlers = [
