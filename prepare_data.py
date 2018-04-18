@@ -5,8 +5,7 @@ import os, shutil, random
 # Read label.csv
 # For each task, make folders, and copy picture to corresponding folders
 
-# root_path = '/data/fashion/data/attribute/web'
-root_path = '/mnt/data/attr'
+root_path = '/data/fashion/data/attribute/web'
 
 label_dir = os.path.join(root_path, 'base', 'Annotations/label.csv')
 warmup_label_dir = os.path.join(root_path, 'web', 'Annotations/skirt_length_labels.csv')

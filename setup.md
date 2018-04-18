@@ -1,3 +1,8 @@
+ps aux | grep python3 | grep collar_design_labels | grep david | awk '{print $2}' | xargs kill -9
+
+ps aux | grep python3 | grep neckline_design_labels | grep david | awk '{print $2}' | xargs kill -9
+ps aux | grep python3 | grep skirt_length_labels | grep david | awk '{print $2}' | xargs kill -9
+
 
 docker run --rm -it -v /home/david/fashionAI/Gluon-FashionAI-Attributes:/app-dev -v /data/fashion/data/attribute/datasets_david:/mnt/data/attr mxnet-cu90/python:1.2.0-roialign
 

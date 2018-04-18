@@ -7,6 +7,8 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
 
+CKPT_PATH = '/data/david/models/fai_attrbutes/v1'
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -122,9 +124,8 @@ def validate(net, val_data, ctx):
     _, val_acc = metric.get()
     return ((val_acc, AP / AP_cnt, val_loss / len(val_data)))
 
-def train():
-    logging.info('Start Training for Task: %s\n' % (task))
 
+def build_model():
     # Initialize the net with pretrained model
     finetune_net = gluon.model_zoo.vision.get_model(model_name, pretrained=True, root='./pretrained_model')
     with finetune_net.name_scope():
@@ -132,6 +133,13 @@ def train():
     finetune_net.output.initialize(init.Xavier(), ctx = ctx)
     finetune_net.collect_params().reset_ctx(ctx)
     finetune_net.hybridize()
+
+    return finetune_net
+
+def train():
+    logging.info('Start Training for Task: %s\n' % (task))
+
+    finetune_net = build_model()
 
     # Define DataLoader
     train_data = gluon.data.DataLoader(
@@ -194,24 +202,33 @@ def train():
         logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                  (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
 
-    logging.info('\n')
-    return (finetune_net)
+        saved_path = os.path.join(CKPT_PATH, '%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
+        finetune_net.save_params(saved_path)
+        logging.info('\nsave results at %s' % saved_path)
+    return (finetune_net, saved_path)
 
-def predict(task):
+def predict(task, saved_path):
     logging.info('Training Finished. Starting Prediction.\n')
-    f_out = open('submission/%s.csv'%(task), 'w')
-    with open('data/rank/Tests/question.csv', 'r') as f_in:
+    rank_root = '/data/fashion/data/attribute/datasets_david/rank'
+    f_out = open('submission/%s.csv'%(task), 'w+')
+    with open(rank_root + '/Tests/question.csv', 'r') as f_in:
         lines = f_in.readlines()
     tokens = [l.rstrip().split(',') for l in lines]
     task_tokens = [t for t in tokens if t[1] == task]
     n = len(task_tokens)
     cnt = 0
+
+    predictor_net = build_model()
+    predictor_ctx = mx.gpu(num_gpus[0]) if len(num_gpus) > 0 else mx.cpu()
+    predictor_net.load_params(saved_path, ctx=predictor_ctx)
+    logging.info("load model from %s" % saved_path)
+
     for path, task, _ in task_tokens:
-        img_path = os.path.join('data/rank', path)
+        img_path = os.path.join(rank_root, path)
         with open(img_path, 'rb') as f:
             img = image.imdecode(f.read())
         data = transform_predict(img)
-        out = net(data.as_in_context(mx.gpu(0)))
+        out = predictor_net(data.as_in_context(predictor_ctx))
         out = nd.SoftmaxActivation(out).mean(axis=0)
 
         pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
@@ -248,9 +265,9 @@ wd = args.wd
 lr_factor = args.lr_factor
 lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
 
-num_gpus = args.num_gpus.split(',')
 num_workers = args.num_workers
-ctx = [mx.gpu(int(i)) for i in num_gpus] if len(num_gpus) > 0 else [mx.cpu()]
+num_gpus = [int(i) for i in args.num_gpus.split(',')]
+ctx = [mx.gpu(i) for i in num_gpus] if len(num_gpus) > 0 else [mx.cpu()]
 batch_size = batch_size * max(len(num_gpus), 1)
 
 logging.basicConfig(level=logging.INFO,
@@ -260,6 +277,7 @@ logging.basicConfig(level=logging.INFO,
                     ])
 
 if __name__ == "__main__":
-    net = train()
-    predict(task)
+    net, saved_path = train()
+    # saved_path = '/data/david/models/fai_attrbutes/v1/collar_design_labels-2018-1.params'
+    predict(task, saved_path)
 
