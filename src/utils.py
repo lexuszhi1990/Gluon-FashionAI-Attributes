@@ -3,7 +3,40 @@
 import mxnet as mx
 from mxnet import gluon, image, init, nd
 import numpy as np
-import os, math
+import os, math, argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--solver_type', required=True, type=str,
+                        help='Train/Validate/Predict')
+    parser.add_argument('--task', required=True, type=str,
+                        help='name of the classification task')
+    parser.add_argument('--model', required=True, type=str,
+                        help='name of the pretrained model from model zoo.')
+    parser.add_argument('--model_path', type=str,
+                        help='pretrained model path.')
+    parser.add_argument('-j', '--workers', dest='num_workers', default=64, type=int,
+                        help='number of preprocessing workers')
+    parser.add_argument('--gpus', default="", type=str,
+                        help='gpu numbers')
+    parser.add_argument('--cpu', help='cpu only', action='store_true')
+    parser.add_argument('--epochs', default=40, type=int,
+                        help='number of training epochs')
+    parser.add_argument('-b', '--batch-size', default=64, type=int,
+                        help='mini-batch size')
+    parser.add_argument('--lr', '--learning-rate', default=0.001, type=float,
+                        help='initial learning rate')
+    parser.add_argument('--momentum', default=0.9, type=float,
+                        help='momentum')
+    parser.add_argument('--weight-decay', '--wd', dest='wd', default=1e-4, type=float,
+                        help='weight decay (default: 1e-4)')
+    parser.add_argument('--lr-factor', default=0.75, type=float,
+                        help='learning rate decay ratio')
+    parser.add_argument('--lr-steps', default='10,20,30', type=str,
+                        help='list of learning rate decay epochs as in str')
+    args = parser.parse_args()
+    return args
 
 def calculate_ap(labels, outputs):
     cnt = 0
@@ -76,7 +109,6 @@ def progressbar(i, n, bar_len=40):
 def mkdir_if_not_exist(path):
     if not os.path.exists(os.path.join(*path)):
         os.makedirs(os.path.join(*path))
-
 
 def calculate_ap(labels, outputs):
     cnt = 0
