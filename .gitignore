@@ -6,4 +6,5 @@ data/*
 .ipynb_checkpoints
 submission
 pretrained_model
+src/__pycache__
 
