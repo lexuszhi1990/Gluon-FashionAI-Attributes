@@ -38,29 +38,24 @@ task_list = {
     'sleeve_length_labels': 9
 }
 
-DATASET_PATH = '/data/david/fai_attr/gloun_data/train_valid'
+TRAIN_VAL_DATASET_PATH = '/data/david/fai_attr/gloun_data/train_valid'
 CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
 SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
 
 class Solver(object):
-    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, solver_type='Train'):
-        self.solver_type = solver_type
+    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.gpus = gpus
         self.cpu = cpu
 
-        self.dataset_path = Path(DATASET_PATH)
+        self.dataset_path = Path(TRAIN_VAL_DATASET_PATH)
         self.submission_path = Path(SUBMISSION_PATH)
         self.ckpt_path = Path(CKPT_PATH)
 
-        path_id = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
-        self.output_submission_path = Path(self.submission_path, path_id)
-        self.output_ckpt_path = Path(self.ckpt_path, path_id)
-
-        if self.solver_type != 'Train':
-            lines = Path(self.submission_path, 'Tests/question.csv').open('r').readlines()
-            self.tokens = [l.rstrip().split(',') for l in lines]
+        unique_path = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
+        self.output_submission_path = Path(self.submission_path, unique_path)
+        self.output_ckpt_path = Path(self.ckpt_path, unique_path)
 
     def get_ctx(self):
         return [mx.cpu()] if self.cpu else [mx.gpu(i) for i in self.gpus]
@@ -111,8 +106,11 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def predict(self, model_path, task, network='densenet201'):
+    def predict(self, dataset_path, model_path, task, network='densenet201'):
         logging.info('starting prediction for %s.\n' % task)
+
+        lines = Path(dataset_path, 'Tests/question.csv').open('r').readlines()
+        self.tokens = [l.rstrip().split(',') for l in lines]
 
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
@@ -129,7 +127,7 @@ class Solver(object):
         logging.info("load model from %s" % model_path)
 
         for index, (path, task, _) in enumerate(task_tokens):
-            raw_img = Path(self.submission_path, path).open('rb').read()
+            raw_img = Path(dataset_path, path).open('rb').read()
             img = image.imdecode(raw_img)
             data = utils.transform_predict(img)
             out = net(data.as_in_context(ctx))
@@ -141,19 +139,9 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def train(self, args):
-        task = args.task
-        model_name = args.model
-        epochs = args.epochs
-        lr = args.lr
-        batch_size = args.batch_size
-        momentum = args.momentum
-        wd = args.wd
-        lr_factor = args.lr_factor
-        lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
-        num_workers = args.num_workers
+    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps):
         ctx = self.get_ctx()
-        batch_size = batch_size * max(len(self.gpus), 1)
+        self.batch_size = self.batch_size * max(len(self.gpus), 1)
 
         logging.info('Start Training for Task: %s\n' % (task))
 
@@ -195,7 +183,7 @@ class Solver(object):
                 for l in loss:
                     l.backward()
 
-                trainer.step(batch_size)
+                trainer.step(self.batch_size)
                 train_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
 
                 metric.update(label, outputs)
@@ -224,10 +212,11 @@ class Solver(object):
 if __name__ == "__main__":
     args = utils.parse_args()
     args.gpus = [int(i) for i in args.gpus.split(',') if len(args.gpus) > 0]
+    args.lr_steps = [int(s) for s in args.lr_steps.split(',')] + [np.inf]
     solver = Solver(batch_size=args.batch_size, num_workers=args.num_workers, gpus=args.gpus, cpu=args.cpu, solver_type=args.solver_type)
 
     if args.solver_type == "Train":
-        solver.train(args)
+        solver.train(task=args.task, model_name=args.model, epochs=args.epochs, lr=args.lr, momentum=args.momentum, wd=args.wd, lr_factor=args.lr_factor, lr_steps=args.lr_steps)
     elif args.solver_type == "Validate":
         # validate(self, symbol, model_path, task, network)
         solver.validate(None, model_path=args.model_path, task=args.task, network=args.model)
