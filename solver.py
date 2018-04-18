@@ -108,12 +108,9 @@ class Solver(object):
             AP_cnt += cnt
         _, val_acc = metric.get()
         val_map, val_loss = AP / AP_cnt, val_loss / len(val_data)
-        logging.info('[%s] Val-acc: %sf, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
+        logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def validate_all(self, symbol, model_path, network='densenet201'):
-        for task in task_list.keys():
-            self.validate(symbol, model_path, task, network=network)
     def predict(self, model_path, task, network='densenet201'):
         logging.info('starting prediction for %s.\n' % task)
 
@@ -225,18 +222,6 @@ class Solver(object):
         return finetune_net
 
 if __name__ == "__main__":
-    # task list:
-    # 'collar_design_labels',
-    # 'skirt_length_labels',
-    # 'lapel_design_labels',
-    # 'neckline_design_labels',
-    # 'coat_length_labels',
-    # 'neck_design_labels',
-    # 'pant_length_labels',
-    # 'sleeve_length_labels',
-    # solver.predict(model_path='/data/david/models/fai_attrbutes/v1/sleeve_length_labels-2018-04-18-14-46-epoch-37.params', task='sleeve_length_labels')
-    # solver.validate(None, model_path='/data/david/models/fai_attrbutes/v1/sleeve_length_labels-2018-04-18-14-46-epoch-37.params', task='sleeve_length_labels', network='densenet201')
-
     args = utils.parse_args()
     args.gpus = [int(i) for i in args.gpus.split(',') if len(args.gpus) > 0]
     solver = Solver(batch_size=args.batch_size, num_workers=args.num_workers, gpus=args.gpus, cpu=args.cpu, solver_type=args.solver_type)
