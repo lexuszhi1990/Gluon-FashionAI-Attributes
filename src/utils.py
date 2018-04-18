@@ -16,6 +16,8 @@ def parse_args():
                         help='name of the pretrained model from model zoo.')
     parser.add_argument('--model_path', type=str,
                         help='pretrained model path.')
+    parser.add_argument('--dataset_path', type=str,
+                        help='dataset path.')
     parser.add_argument('-j', '--workers', dest='num_workers', default=64, type=int,
                         help='number of preprocessing workers')
     parser.add_argument('--gpus', default="", type=str,
