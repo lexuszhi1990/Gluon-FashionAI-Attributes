@@ -3,6 +3,7 @@
 *.csv
 data/*
 *.swp
+*.pyc
 .ipynb_checkpoints
 submission
 pretrained_model
