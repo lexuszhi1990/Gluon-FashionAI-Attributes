@@ -58,8 +58,7 @@ model_dict = {
 
 solver = Solver(batch_size=24, num_workers=16, gpus=[7], solver_type='Validate')
 
-
-results_file_path = Path('./results_roadmap.md')
+results_file_path = Path('./results/results_roadmap.md')
 f_out = results_file_path.open('a')
 f_out.write('%s :\n' % time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())))
 
