@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import time
+from pathlib import Path
 from solver import Solver
-
-
-
 
 # task list:
 # 'collar_design_labels',
@@ -59,6 +58,11 @@ model_dict = {
 
 solver = Solver(batch_size=24, num_workers=16, gpus=[7], solver_type='Validate')
 
+
+results_file_path = Path('./results_roadmap.md')
+f_out = results_file_path.open('a')
+f_out.write('%s :\n' % time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())))
+
 val_acc_list, val_map_list, val_loss_list = [], [], []
 for index, task in enumerate(model_dict):
     details = model_dict[task]
@@ -67,8 +71,12 @@ for index, task in enumerate(model_dict):
     val_map_list.append(val_map)
     val_loss_list.append(val_loss)
 
-print("mean acc: %.4f, mean map: %.4f, mean loss %.4f" % (
-        sum(val_acc_list)/len(val_acc_list),
-        sum(val_map_list)/len(val_map_list),
-        sum(val_loss_list)/len(val_loss_list)
-        ))
+    f_out.write('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
+
+mean_val_acc = sum(val_acc_list)/len(val_acc_list)
+mean_val_map = sum(val_map_list)/len(val_map_list)
+mean_val_loss = sum(val_loss_list)/len(val_loss_list)
+print("mean acc: %.4f, mean map: %.4f, mean loss %.4f" % (mean_val_acc, mean_val_map, mean_val_loss))
+
+f_out.write("mean acc: %.4f, mean map: %.4f, mean loss %.4f\n" % (mean_val_acc, mean_val_map, mean_val_loss))
+f_out.close()
