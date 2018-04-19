@@ -42,19 +42,21 @@ TRAIN_VAL_DATASET_PATH = '/data/david/fai_attr/gloun_data/train_valid'
 CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
 SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
 
+TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
+VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
+
 class Solver(object):
-    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None):
+    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, submission_path=SUBMISSION_PATH):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.gpus = gpus
         self.cpu = cpu
 
         self.dataset_path = Path(TRAIN_VAL_DATASET_PATH)
-        self.submission_path = Path(SUBMISSION_PATH)
         self.ckpt_path = Path(CKPT_PATH)
 
         unique_path = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
-        self.output_submission_path = Path(self.submission_path, unique_path)
+        self.output_submission_path = Path(submission_path, unique_path)
         self.output_ckpt_path = Path(self.ckpt_path, unique_path)
 
     def get_ctx(self):
@@ -68,9 +70,19 @@ class Solver(object):
 
     def get_train_data(self, task):
         return gluon.data.DataLoader(
-            gluon.data.vision.ImageFolderDataset(self.dataset_path.joinpath(task, 'val').as_posix(),
+            gluon.data.vision.ImageFolderDataset(self.dataset_path.joinpath(task, 'train').as_posix(),
                 transform=utils.transform_train),
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch='discard')
+
+    def get_gluon_dataset(self, dataset_path, task, is_train=True):
+        if is_train:
+            train_dataset = utils.FaiAttrDataset(dataset_path, task)
+            return gluon.data.DataLoader(
+                train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch='discard')
+        else:
+            val_dataset = utils.FaiAttrDataset(dataset_path, task)
+            return gluon.data.DataLoader(
+                val_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def validate(self, symbol, model_path, task, network='densenet201'):
         logging.info('starting validating for %s.\n' % task)
@@ -83,8 +95,9 @@ class Solver(object):
         else:
             net = symbol
 
-        val_data = self.get_validate_data(task)
-        logging.info("load validate dataset from %s" % (self.dataset_path))
+        # val_data = self.get_validate_data(task)
+        val_data = self.get_gluon_dataset(VAL_DATASET_PATH ,task, is_train=True)
+        logging.info("load validate dataset from %s" % (VAL_DATASET_PATH))
 
         metric = mx.metric.Accuracy()
         L = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -109,7 +122,7 @@ class Solver(object):
     def predict(self, dataset_path, model_path, task, network='densenet201'):
         logging.info('starting prediction for %s.\n' % task)
 
-        lines = Path(dataset_path, 'Tests/question.csv').open('r').readlines()
+        lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
         self.tokens = [l.rstrip().split(',') for l in lines]
 
         if not self.output_submission_path.exists():
@@ -126,7 +139,7 @@ class Solver(object):
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
 
-        for index, (path, task, _) in enumerate(task_tokens):
+        for index, (path, task, _, _, _, _) in enumerate(task_tokens):
             raw_img = Path(dataset_path, path).open('rb').read()
             img = image.imdecode(raw_img)
             data = utils.transform_predict(img)
@@ -139,7 +152,10 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps):
+    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus=None):
+        if gpus:
+            self.gpus = gpus
+
         ctx = self.get_ctx()
         self.batch_size = self.batch_size * max(len(self.gpus), 1)
 
@@ -151,8 +167,10 @@ class Solver(object):
 
         finetune_net = get_pretrained_model(model_name, task_list[task], ctx)
 
-        train_data = self.get_train_data(task)
-        logging.info("load train dataset from %s for %s" % (self.dataset_path, task))
+        # train_data = self.get_train_data(task)
+        # logging.info("load train dataset from %s for %s" % (self.dataset_path, task))
+        train_data = self.get_gluon_dataset(TRAIN_DATASET_PATH ,task, is_train=True)
+        logging.info("load validate dataset from %s" % (TRAIN_DATASET_PATH))
 
         # Define Trainer
         trainer = gluon.Trainer(finetune_net.collect_params(), 'sgd', {
@@ -202,7 +220,8 @@ class Solver(object):
             finetune_net.save_params(saved_path.as_posix())
             logging.info('\nsave results at %s' % saved_path)
 
-            val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name)
+            # val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name)
+            val_acc, val_map, val_loss = 0, 0, 0
 
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))

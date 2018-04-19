@@ -16,47 +16,63 @@ from solver import Solver
 
 model_dict = {
     'collar_design_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/collar_design_labels-2018-04-18-12-01-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/collar_design_labels-2018-04-18-12-01-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-46-89909/collar_design_labels-2018-04-19-20-18-epoch-22.params',
+        'network': 'densenet201',
+        'gpu': 2
     },
 
     'skirt_length_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/skirt_length_labels-2018-04-18-13-14-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/skirt_length_labels-2018-04-18-13-14-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-47-46779/skirt_length_labels-2018-04-19-20-20-epoch-9.params',
+        'network': 'densenet201',
+        'gpu': 3
     },
 
     'lapel_design_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/lapel_design_labels-2018-04-18-16-59-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/lapel_design_labels-2018-04-18-16-59-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-47-82970/lapel_design_labels-2018-04-19-19-54-epoch-19.params',
+        'network': 'densenet201',
+        'gpu': 6
     },
 
     'neckline_design_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/neckline_design_labels-2018-04-18-12-55-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/neckline_design_labels-2018-04-18-12-55-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-48-6310/neckline_design_labels-2018-04-19-20-35-epoch-12.params',
+        'network': 'densenet201',
+        'gpu': 7
     },
 
     'coat_length_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/coat_length_labels-2018-04-18-16-29-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/coat_length_labels-2018-04-18-16-29-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-48-14548/coat_length_labels-2018-04-19-20-19-epoch-16.params',
+        'network': 'densenet201',
+        'gpu': 2
     },
 
     'neck_design_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/neck_design_labels-2018-04-18-14-57-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/neck_design_labels-2018-04-18-14-57-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-49-33957/neck_design_labels-2018-04-19-20-10-epoch-29.params',
+        'network': 'densenet201',
+        'gpu': 3
     },
 
     'pant_length_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/pant_length_labels-2018-04-18-17-59-epoch-38.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/pant_length_labels-2018-04-18-17-59-epoch-38.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-49-70385/pant_length_labels-2018-04-19-20-36-epoch-29.params',
+        'network': 'densenet201',
+        'gpu': 6
     },
 
     'sleeve_length_labels' : {
-        'model_path': '/data/david/models/fai_attrbutes/v1/sleeve_length_labels-2018-04-18-14-50-epoch-39.params',
-        'network': 'densenet201'
+        # 'model_path': '/data/david/models/fai_attrbutes/v1/sleeve_length_labels-2018-04-18-14-50-epoch-39.params',
+        'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-50-20482/sleeve_length_labels-2018-04-19-20-18-epoch-13.params',
+        'network': 'densenet201',
+        'gpu': 3
     }
 }
 
-solver = Solver(batch_size=24, num_workers=16, gpus=[7], solver_type='Validate')
+solver = Solver(batch_size=24, num_workers=16, gpus=[7])
 
 results_file_path = Path('./results/results_roadmap.md')
 f_out = results_file_path.open('a')
