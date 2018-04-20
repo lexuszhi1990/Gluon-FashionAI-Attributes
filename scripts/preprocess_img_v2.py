@@ -9,7 +9,7 @@ from pathlib import Path
 import pickle
 import numpy as np
 
-BASE_SHAPE = 512
+BASE_SHAPE = 360
 
 rgb_mean = np.array([0.485, 0.456, 0.406])
 rgb_std = np.array([0.229, 0.224, 0.225])
@@ -34,23 +34,23 @@ transfered_label_dict = {'coat_length_labels': [],
 
 # Train
 # dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
+# # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
 # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v2.json'
 # dataset_path = '/data/david/fai_attr/raw_data/train_v1'
 # label_file_path = dataset_path + '/Annotations/train.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/train_v1'
+# outout_path = '/data/david/fai_attr/transfered_data/train_v4'
 
-dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1.json'
-results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1_detection_max_5.json'
-dataset_path = '/data/david/fai_attr/raw_data/val_v1'
-label_file_path = dataset_path + '/Annotations/val.csv'
-outout_path = '/data/david/fai_attr/transfered_data/val_v2'
+# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1_detection_max_5.json'
+# dataset_path = '/data/david/fai_attr/raw_data/val_v1'
+# label_file_path = dataset_path + '/Annotations/val.csv'
+# outout_path = '/data/david/fai_attr/transfered_data/val_v2'
 
-# dataset_json_file = '/data/david/fai_attr/raw_data/test_v1/annotations/question.json'
-# results_json_file = '/data/david/fai_attr/raw_data/test_v1/annotations/detections_question_results.json'
-# dataset_path = '/data/david/fai_attr/raw_data/test_v1'
-# label_file_path = dataset_path + '/annotations/test.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/test_v1'
+dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
+results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
+dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
+label_file_path = dataset_path + '/Annotations/test.csv'
+outout_path = '/data/david/fai_attr/transfered_data/partial_test_v2'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
@@ -89,9 +89,17 @@ for img_id in coco.imgs:
     img_info = coco.imgs[img_id]
     task = img_info['file_name'].split('/')[1]
     img_path = Path(dataset_path, img_info['file_name'])
+
+    if not img_path.exists():
+        continue
+
     assert img_path.exists(), "img_path %s not exists" % img_path
     img_raw = cv2.imread(img_path.as_posix())
     raw_label = find_label_by_path(task, img_info['file_name'])
+
+    if raw_label is None:
+        continue
+
     one_hot_label = convert_label_to_one_hot(raw_label)
 
     dets = [det for det in detections if det['image_id'] == img_id]
@@ -125,6 +133,18 @@ for img_id in coco.imgs:
     category_id = det['category_id']
     category_name = coco.cats[det['category_id']]['name']
     bbox = [int(i) for i in det['bbox']]
+
+    cropped_img = img_raw[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
+    c_h, c_w = cropped_img.shape[:2]
+    max_dim = max(c_h, c_w)
+    top_pad = (max_dim - c_h) // 2
+    bottom_pad = max_dim - c_h - top_pad
+    left_pad = (max_dim - c_w) // 2
+    right_pad = max_dim - c_w - left_pad
+    padding = [(top_pad, bottom_pad), (left_pad, right_pad), (0, 0)]
+    cropped_img = np.pad(cropped_img, padding, mode='constant', constant_values=0)
+    resize_img = cv2.resize(cropped_img, (BASE_SHAPE, BASE_SHAPE), interpolation=cv2.INTER_CUBIC)
+
     # cat_list = ['blouse', 'dress', 'outwear', 'skirt', 'trousers']
     # task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels',]
     # if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
@@ -132,11 +152,9 @@ for img_id in coco.imgs:
     #     (category_name == 'dress' and task in ['pant_length_labels', 'skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
     #     print('category %s matches task: %s' % (category_name, task))
     #     match_nums = match_nums + 1
-
     # for det in dets:
     #     category_id = det['category_id']
     #     category_name = coco.cats[det['category_id']]['name']
-
     #     if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
     #         (category_name in ["outwear", 'blouse'] and task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']) or \
     #         (category_name == 'dress' and task in ['skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
@@ -144,35 +162,30 @@ for img_id in coco.imgs:
     #         match_nums = match_nums + 1
     #         curent_det = det
     #         break
-
-    height, width = img_raw.shape[:2]
-    if height > width:
-        img_raw = imutils.rotate_bound(img_raw, 270)
-        height, width = img_raw.shape[:2]
-        bbox = [bbox[1], width-bbox[0]-bbox[2], bbox[3], bbox[2]]
-    # print("get raw image %s at (%d, %d) " % (img_path, img_raw.shape[0], img_raw.shape[1]))
-    center_x, center_y = bbox[0] + bbox[2]/2, bbox[1] + bbox[3]/2
-
-    if center_x <= height/2:
-        margin_x_right = height
-        cropped_img = img_raw[:, :margin_x_right]
-    elif center_x > height/2 and width - center_x < height/2:
-        margin_x_left = width - height
-        bbox[0] = bbox[0] - margin_x_left
-        cropped_img = img_raw[:, margin_x_left:]
-    elif center_x >= height/2 and width - center_x >= height/2:
-        margin_x_left = int(center_x - height/2)
-        bbox[0] = bbox[0] - margin_x_left
-        cropped_img = img_raw[:, margin_x_left:margin_x_left+height]
-    else:
-        raise RuntimeError()
-
-    # TODO: refix crop image depending on bbox
-    bbox[0] = 0 if bbox[0] < 0 else bbox[0]
-
-    assert cropped_img.shape[0] == cropped_img.shape[1], "cropped_img should resized to same shape (%d, %d)" % (cropped_img.shape[0], cropped_img.shape[1])
-
-    resize_img = cv2.resize(cropped_img, (BASE_SHAPE, BASE_SHAPE), interpolation=cv2.INTER_CUBIC)
+    # height, width = img_raw.shape[:2]
+    # if height > width:
+    #     img_raw = imutils.rotate_bound(img_raw, 270)
+    #     height, width = img_raw.shape[:2]
+    #     bbox = [bbox[1], width-bbox[0]-bbox[2], bbox[3], bbox[2]]
+    # # print("get raw image %s at (%d, %d) " % (img_path, img_raw.shape[0], img_raw.shape[1]))
+    # center_x, center_y = bbox[0] + bbox[2]/2, bbox[1] + bbox[3]/2
+    # if center_x <= height/2:
+    #     margin_x_right = height
+    #     cropped_img = img_raw[:, :margin_x_right]
+    # elif center_x > height/2 and width - center_x < height/2:
+    #     margin_x_left = width - height
+    #     bbox[0] = bbox[0] - margin_x_left
+    #     cropped_img = img_raw[:, margin_x_left:]
+    # elif center_x >= height/2 and width - center_x >= height/2:
+    #     margin_x_left = int(center_x - height/2)
+    #     bbox[0] = bbox[0] - margin_x_left
+    #     cropped_img = img_raw[:, margin_x_left:margin_x_left+height]
+    # else:
+    #     raise RuntimeError()
+    # # TODO: refix crop image depending on bbox
+    # bbox[0] = 0 if bbox[0] < 0 else bbox[0]
+    # assert cropped_img.shape[0] == cropped_img.shape[1], "cropped_img should resized to same shape (%d, %d)" % (cropped_img.shape[0], cropped_img.shape[1])
+    # resize_img = cv2.resize(cropped_img, (BASE_SHAPE, BASE_SHAPE), interpolation=cv2.INTER_CUBIC)
 
     # post processing
     output_imgs_path = Path(outout_path, 'Images', task)
