@@ -6,6 +6,10 @@ import numpy as np
 import os, math, argparse
 from pathlib import Path
 
+rgb_mean = nd.array([0.485, 0.456, 0.406])
+rgb_std = nd.array([0.229, 0.224, 0.225])
+BASE_SHAPE = 360
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -52,6 +56,9 @@ def calculate_ap(labels, outputs):
             ap += 1.0 / (1+list(op_argsort).index(lb_int))
             cnt += 1
     return ((ap, cnt))
+
+def normalize_image(data):
+    return (data.astype('float32') / 255 - rgb_mean) / rgb_std
 
 def ten_crop(img, size):
     H, W = size
@@ -103,6 +110,20 @@ def transform_predict(im):
     im = ten_crop(im, (224, 224))
     return (im)
 
+def transform_predict_with_ten(im):
+    im = im.astype('float32') / 255
+    im = nd.transpose(im, (2,0,1))
+    im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    im = ten_crop(im, (224, 224))
+    return (im)
+
+def transform_predict_one(im):
+    im = image.resize_short(im, BASE_SHAPE)
+    im = normalize_image(im)
+    im = im.transpose((2,0,1))
+    im = im.expand_dims(axis=0)
+    return (im)
+
 def progressbar(i, n, bar_len=40):
     percents = math.ceil(100.0 * i / float(n))
     filled_len = int(round(bar_len * i / float(n)))
@@ -125,20 +146,13 @@ def calculate_ap(labels, outputs):
             cnt += 1
     return ((ap, cnt))
 
-
-rgb_mean = nd.array([0.485, 0.456, 0.406])
-rgb_std = nd.array([0.229, 0.224, 0.225])
-BASE_SHAPE = 360
-
-def normalize_image(data):
-    return (data.astype('float32') / 255 - rgb_mean) / rgb_std
-
 class FaiAttrDataset(gluon.data.Dataset):
 
-    def __init__(self, dataset_path, task, dataset_type=None):
+    def __init__(self, dataset_path, task, dataset_type='train'):
 
         self.dataset_path = dataset_path
         self.task = task
+        self.dataset_type = dataset_type
 
         self.label_path = Path(self.dataset_path, "Annotations", "%s.csv"%task)
         assert self.label_path.exists(), "%s not exists" % self.label_path
@@ -180,9 +194,11 @@ class FaiAttrDataset(gluon.data.Dataset):
         img_path, bbox = raw_line['img_path'], raw_line['bbox']
         label = nd.array([raw_line['label_argmax_index']])
         raw_image = image.imread(img_path)
-        # raw_image = image.resize_short(raw_image, 360)
-        raw_image = image.CenterCropAug((BASE_SHAPE, BASE_SHAPE))(raw_image)
-        raw_image = image.HorizontalFlipAug(0.5)(raw_image)
+        if self.dataset_type == 'train':
+            raw_image = image.CenterCropAug((BASE_SHAPE, BASE_SHAPE))(raw_image)
+            raw_image = image.HorizontalFlipAug(0.5)(raw_image)
+
+        raw_image = image.resize_short(raw_image, BASE_SHAPE)
         raw_image = normalize_image(raw_image)
         data = raw_image.transpose((2,0,1))
         return data, label
