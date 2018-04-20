@@ -194,11 +194,9 @@ class FaiAttrDataset(gluon.data.Dataset):
         img_path, bbox = raw_line['img_path'], raw_line['bbox']
         label = nd.array([raw_line['label_argmax_index']])
         raw_image = image.imread(img_path)
-        if self.dataset_type == 'train':
-            raw_image = image.CenterCropAug((BASE_SHAPE, BASE_SHAPE))(raw_image)
-            raw_image = image.HorizontalFlipAug(0.5)(raw_image)
-
         raw_image = image.resize_short(raw_image, BASE_SHAPE)
+        if self.dataset_type == 'train':
+            raw_image = image.HorizontalFlipAug(0.5)(raw_image)
         raw_image = normalize_image(raw_image)
         data = raw_image.transpose((2,0,1))
         return data, label

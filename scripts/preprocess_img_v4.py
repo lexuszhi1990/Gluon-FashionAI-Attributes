@@ -46,11 +46,17 @@ transfered_label_dict = {'coat_length_labels': [],
 # label_file_path = dataset_path + '/Annotations/val.csv'
 # outout_path = '/data/david/fai_attr/transfered_data/val_v4'
 
-dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
-results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
-dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
-label_file_path = dataset_path + '/Annotations/test.csv'
-outout_path = '/data/david/fai_attr/transfered_data/partial_test_v4'
+# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
+# dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
+# label_file_path = dataset_path + '/Annotations/test.csv'
+# outout_path = '/data/david/fai_attr/transfered_data/partial_test_v4'
+
+dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
+results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
+dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
+label_file_path = dataset_path + '/Annotations/train.csv'
+outout_path = '/data/david/fai_attr/transfered_data/train_val_v1'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
@@ -98,6 +104,7 @@ for img_id in coco.imgs:
 
     # if raw_label is None:
     #     continue
+    assert raw_label is not None, "raw_label is None"
 
     one_hot_label = convert_label_to_one_hot(raw_label)
     dets = [det for det in detections if det['image_id'] == img_id]
