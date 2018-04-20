@@ -52,3 +52,4 @@ for data, label in train_data:
     print(label.shape)
     break
 
+
