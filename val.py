@@ -14,11 +14,12 @@ from pathlib import Path
 from solver import Solver
 from src.config import config
 
-VERSION = 'v2'
+VERSION = 'v3'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
 validation_path = '/data/david/fai_attr/transfered_data/val_v1'
+# validation_path = '/data/david/fai_attr/transfered_data/partial_test_v2'
 
 batch_size=8
 num_workers=4
@@ -29,7 +30,8 @@ f_out = results_file_path.open('a')
 f_out.write('%s :\n' % time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())))
 f_out.write('test path %s :\n' % validation_path)
 
-solver = Solver(batch_size=batch_size, num_workers=num_workers, gpus=gpus, validation_path=validation_path)
+gpus = [0]
+solver = Solver(validation_path=validation_path)
 
 if len(sys.argv) == 2:
     task = sys.argv[1]
@@ -37,14 +39,14 @@ if len(sys.argv) == 2:
     assert task in task_list, "UNKOWN TASK"
     details = model_dict[task]
 
-    val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'])
+    val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=gpus)
     print('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
     f_out.write('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
 else:
     val_acc_list, val_map_list, val_loss_list = [], [], []
     for index, task in enumerate(model_dict):
         details = model_dict[task]
-        val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'])
+        val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=gpus)
         val_acc_list.append(val_acc)
         val_map_list.append(val_map)
         val_loss_list.append(val_loss)
@@ -57,4 +59,5 @@ else:
     print("mean acc: %.4f, mean map: %.4f, mean loss %.4f" % (mean_val_acc, mean_val_map, mean_val_loss))
     f_out.write("mean acc: %.4f, mean map: %.4f, mean loss %.4f\n" % (mean_val_acc, mean_val_map, mean_val_loss))
 
+f_out.write('\n')
 f_out.close()

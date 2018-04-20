@@ -48,9 +48,9 @@ transfered_label_dict = {'coat_length_labels': [],
 
 dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
 results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
-dataset_path = '/data/david/fai_attr/raw_data/test_v1'
-label_file_path = dataset_path + '/Tests/test.csv'
-outout_path = '/data/david/fai_attr/transfered_data/test_v4'
+dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
+label_file_path = dataset_path + '/Annotations/test.csv'
+outout_path = '/data/david/fai_attr/transfered_data/partial_test_v4'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
