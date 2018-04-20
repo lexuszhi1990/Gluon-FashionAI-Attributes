@@ -84,6 +84,81 @@ config.MODEL_LIST = {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-19-18-50-20482/sleeve_length_labels-2018-04-19-20-18-epoch-13.params',
             'network': 'densenet201'
         }
+    },
+
+    "v3": {
+        'collar_design_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-32-34904/collar_design_labels-2018-04-20-11-26-epoch-19.params',
+            'network': 'densenet121',
+            'gpu' : 0,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'skirt_length_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-58-52767/skirt_length_labels-2018-04-20-11-27-epoch-2.params',
+            'network': 'densenet201',
+            'gpu' : 1,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'lapel_design_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-35-95574/lapel_design_labels-2018-04-20-11-29-epoch-12.params',
+            'network': 'densenet121',
+            'gpu' : 2,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'neckline_design_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-36-80931/neckline_design_labels-2018-04-20-11-31-epoch-5.params',
+            'network': 'densenet121',
+            'gpu' : 3,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'coat_length_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-41-11976/coat_length_labels-2018-04-20-11-32-epoch-8.params',
+            'network': 'densenet201',
+            'gpu' : 4,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'neck_design_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-43-33233/neck_design_labels-2018-04-20-11-31-epoch-13.params',
+            'network': 'densenet201',
+            'gpu' : 5,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'pant_length_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-44-71409/pant_length_labels-2018-04-20-11-34-epoch-15.params',
+            'network': 'densenet121',
+            'gpu' : 6,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        },
+        'sleeve_length_labels' : {
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-10-46-14291/sleeve_length_labels-2018-04-20-11-34-epoch-5.params',
+            'network': 'densenet201',
+            'gpu' : 7,
+            'num_workers' : 4,
+            'batch_size' : 8,
+            'lr' : 0.001
+
+        }
     }
 
 }

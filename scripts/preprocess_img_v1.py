@@ -33,18 +33,18 @@ transfered_label_dict = {'coat_length_labels': [],
               'sleeve_length_labels': []}
 
 # Train
-dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val.json'
-results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
-results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v2.json'
-dataset_path = '/data/david/fai_attr/raw_data/train_v1'
-label_file_path = dataset_path + '/Annotations/train.csv'
-outout_path = '/data/david/fai_attr/transfered_data/train_v1'
+# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v2.json'
+# dataset_path = '/data/david/fai_attr/raw_data/train_v1'
+# label_file_path = dataset_path + '/Annotations/train.csv'
+# outout_path = '/data/david/fai_attr/transfered_data/train_v1'
 
-# dataset_json_file = '/data/david/fai_attr/raw_data/val_v1/Annotations/val_coco_format.json'
-# results_json_file = '/data/david/fai_attr/raw_data/val_v1/Annotations/detections_question_results.json'
-# dataset_path = '/data/david/fai_attr/raw_data/val_v1'
-# label_file_path = dataset_path + '/Annotations/val.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/val_v1'
+dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1.json'
+results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1_detection_max_5.json'
+dataset_path = '/data/david/fai_attr/raw_data/val_v1'
+label_file_path = dataset_path + '/Annotations/val.csv'
+outout_path = '/data/david/fai_attr/transfered_data/val_v2'
 
 # dataset_json_file = '/data/david/fai_attr/raw_data/test_v1/annotations/question.json'
 # results_json_file = '/data/david/fai_attr/raw_data/test_v1/annotations/detections_question_results.json'
@@ -104,31 +104,46 @@ for img_id in coco.imgs:
         continue
 
     # TODO: choose best det here
+    # task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
     det_names = [coco.cats[det['category_id']]['name'] for det in dets]
+    if task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']:
+        for cat_name in ["outwear", 'blouse', 'dress']:
+            if cat_name in det_names:
+                curent_det = dets[det_names.index(cat_name)]
+    elif task in ['skirt_length_labels', 'sleeve_length_labels']:
+        for cat_name in ["skirt", 'trousers', 'dress']:
+            if cat_name in det_names:
+                curent_det = dets[det_names.index(cat_name)]
 
-    for det in dets:
-        category_id = det['category_id']
-        category_name = coco.cats[det['category_id']]['name']
+    if curent_det is None:
+        det = dets[0]
+        print('category %s not match task: %s' % (coco.cats[det['category_id']]['name'], task))
+    else:
+        det = curent_det
+        match_nums = match_nums + 1
 
-        if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
-            (category_name in ["outwear", 'blouse'] and task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']) or \
-            (category_name == 'dress' and task in ['skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
-            print('category %s matches task: %s' % (category_name, task))
-            match_nums = match_nums + 1
-            corrent_det = det
-            break
-
-    det = dets[0] if corrent_det is None else corrent_det
     category_id = det['category_id']
     category_name = coco.cats[det['category_id']]['name']
     bbox = [int(i) for i in det['bbox']]
     # cat_list = ['blouse', 'dress', 'outwear', 'skirt', 'trousers']
     # task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels',]
-    if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
-        (category_name in ["outwear", 'blouse'] and task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']) or \
-        (category_name == 'dress' and task in ['pant_length_labels', 'skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
-        print('category %s matches task: %s' % (category_name, task))
-        match_nums = match_nums + 1
+    # if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
+    #     (category_name in ["outwear", 'blouse'] and task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']) or \
+    #     (category_name == 'dress' and task in ['pant_length_labels', 'skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
+    #     print('category %s matches task: %s' % (category_name, task))
+    #     match_nums = match_nums + 1
+
+    # for det in dets:
+    #     category_id = det['category_id']
+    #     category_name = coco.cats[det['category_id']]['name']
+
+    #     if (category_name in ["skirt", 'trousers'] and task in ['pant_length_labels', 'skirt_length_labels']) or \
+    #         (category_name in ["outwear", 'blouse'] and task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']) or \
+    #         (category_name == 'dress' and task in ['skirt_length_labels', 'sleeve_length_labels', 'coat_length_labels']):
+    #         print('category %s matches task: %s' % (category_name, task))
+    #         match_nums = match_nums + 1
+    #         curent_det = det
+    #         break
 
     height, width = img_raw.shape[:2]
     if height > width:

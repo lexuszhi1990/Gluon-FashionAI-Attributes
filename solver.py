@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO,
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
-task_list = {
+task_class_num_list = {
     'collar_design_labels': 5,
     'skirt_length_labels': 6,
     'lapel_design_labels': 5,
@@ -40,13 +40,13 @@ task_list = {
 
 TRAIN_VAL_DATASET_PATH = '/data/david/fai_attr/gloun_data/train_valid'
 CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
-SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
+DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
 
 TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
 VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
 
 class Solver(object):
-    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, submission_path=SUBMISSION_PATH):
+    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, submission_path=None):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.gpus = gpus
@@ -56,7 +56,11 @@ class Solver(object):
         self.ckpt_path = Path(CKPT_PATH)
 
         unique_path = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
-        self.output_submission_path = Path(submission_path, unique_path)
+        if submission_path is None:
+            self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, unique_path)
+        else:
+            self.output_submission_path = Path(submission_path)
+
         self.output_ckpt_path = Path(self.ckpt_path, unique_path)
 
     def get_ctx(self):
@@ -74,29 +78,26 @@ class Solver(object):
                 transform=utils.transform_train),
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch='discard')
 
-    def get_gluon_dataset(self, dataset_path, task, is_train=True):
-        if is_train:
-            train_dataset = utils.FaiAttrDataset(dataset_path, task)
-            return gluon.data.DataLoader(
-                train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch='discard')
-        else:
-            val_dataset = utils.FaiAttrDataset(dataset_path, task)
-            return gluon.data.DataLoader(
-                val_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+    def get_gluon_dataset(self, dataset_path, task, dataset_type='train'):
+        is_shuffle = True if dataset_type == 'train' else False
+        last_batch_type = 'keep' if dataset_type != 'train' else 'discard'
+        fai_dataset = utils.FaiAttrDataset(dataset_path, task)
+        return gluon.data.DataLoader(
+            fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
 
     def validate(self, symbol, model_path, task, network='densenet201'):
-        logging.info('starting validating for %s.\n' % task)
+        logging.info('starting validating for %s.' % task)
 
         ctx = self.get_ctx()
         if symbol is None:
-            net = get_pretrained_model(network, task_list[task], ctx)
+            net = get_pretrained_model(network, task_class_num_list[task], ctx)
             net.load_params(model_path, ctx=ctx)
             logging.info("load model from %s" % model_path)
         else:
             net = symbol
 
         # val_data = self.get_validate_data(task)
-        val_data = self.get_gluon_dataset(VAL_DATASET_PATH ,task, is_train=True)
+        val_data = self.get_gluon_dataset(VAL_DATASET_PATH ,task, dataset_type='val')
         logging.info("load validate dataset from %s" % (VAL_DATASET_PATH))
 
         metric = mx.metric.Accuracy()
@@ -119,8 +120,8 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def predict(self, dataset_path, model_path, task, network='densenet201'):
-        logging.info('starting prediction for %s.\n' % task)
+    def predict_one_by_one(self, dataset_path, model_path, task, network='densenet201'):
+        logging.info('starting prediction for %s.' % task)
 
         lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
         self.tokens = [l.rstrip().split(',') for l in lines]
@@ -130,12 +131,11 @@ class Solver(object):
             logging.info('create %s' % self.output_submission_path)
 
         task_tokens = [t for t in self.tokens if t[1] == task]
-
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_pretrained_model(network, task_list[task], ctx)
+        net = get_pretrained_model(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
 
@@ -152,6 +152,40 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
+    def predict(self, test_dataset_path, model_path, task, symbol=None, network='densenet201'):
+        logging.info('starting predict for %s.' % task)
+
+        if not self.output_submission_path.exists():
+            self.output_submission_path.mkdir()
+            logging.info('create %s' % self.output_submission_path)
+
+        results_path = self.output_submission_path.joinpath('%s.csv'%(task))
+        f_out = results_path.open('w+')
+
+        ctx = self.get_ctx()[0]
+        if symbol is None:
+            net = get_pretrained_model(network, task_class_num_list[task], ctx)
+            net.load_params(model_path, ctx=ctx)
+            logging.info("load model from %s" % model_path)
+        else:
+            net = symbol
+
+        # val_data = self.get_validate_data(task)
+        test_data = self.get_gluon_dataset(test_dataset_path ,task, dataset_type='test')
+        logging.info("load test dataset from %s" % (test_dataset_path))
+        for i, batch in enumerate(test_data):
+            data = gluon.utils.split_and_load(batch[0], ctx_list=[ctx], batch_axis=0, even_split=False)
+            outputs = [net(X) for X in data]
+            for output in outputs[0]:
+                import pdb
+                pdb.set_trace()
+                out = nd.SoftmaxActivation(output).mean(axis=0)
+                pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
+                line_out = ','.join([path, task, pred_out])
+                f_out.write(line_out + '\n')
+        f_out.close()
+        logging.info("end predicting for %s, results saved at %s" % (task, results_path))
+
     def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus=None):
         if gpus:
             self.gpus = gpus
@@ -159,17 +193,17 @@ class Solver(object):
         ctx = self.get_ctx()
         self.batch_size = self.batch_size * max(len(self.gpus), 1)
 
-        logging.info('Start Training for Task: %s\n' % (task))
+        logging.info('Start Training for Task: %s' % (task))
 
         if not self.output_ckpt_path.exists():
             self.output_ckpt_path.mkdir()
             logging.info('create %s' % self.output_ckpt_path)
 
-        finetune_net = get_pretrained_model(model_name, task_list[task], ctx)
+        finetune_net = get_pretrained_model(model_name, task_class_num_list[task], ctx)
 
         # train_data = self.get_train_data(task)
         # logging.info("load train dataset from %s for %s" % (self.dataset_path, task))
-        train_data = self.get_gluon_dataset(TRAIN_DATASET_PATH ,task, is_train=True)
+        train_data = self.get_gluon_dataset(TRAIN_DATASET_PATH ,task, dataset_type='train')
         logging.info("load validate dataset from %s" % (TRAIN_DATASET_PATH))
 
         # Define Trainer
@@ -218,13 +252,13 @@ class Solver(object):
 
             saved_path = self.output_ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             finetune_net.save_params(saved_path.as_posix())
-            logging.info('\nsave results at %s' % saved_path)
 
-            # val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name)
-            val_acc, val_map, val_loss = 0, 0, 0
+            val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name)
+            # val_acc, val_map, val_loss = 0, 0, 0
 
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
+            logging.info('\nsave results at %s' % saved_path)
 
         return finetune_net
 
