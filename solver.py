@@ -22,7 +22,7 @@ from src.symbol import get_pretrained_model
 logging.basicConfig(level=logging.INFO,
                     handlers = [
                         logging.StreamHandler(),
-                        logging.FileHandler('training.log')
+                        logging.FileHandler('logs/training-%s.log' % ("%s"%(time.strftime("%Y-%m-%d-%H-%M"))))
                     ])
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
@@ -41,12 +41,11 @@ task_class_num_list = {
 TRAIN_VAL_DATASET_PATH = '/data/david/fai_attr/gloun_data/train_valid'
 CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
 DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
-
 TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
 VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
 
 class Solver(object):
-    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, submission_path=None):
+    def __init__(self, batch_size=None, num_workers=None, gpus=None, cpu=None, submission_path=None, validation_path=None):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.gpus = gpus
@@ -54,6 +53,8 @@ class Solver(object):
 
         self.dataset_path = Path(TRAIN_VAL_DATASET_PATH)
         self.ckpt_path = Path(CKPT_PATH)
+
+        self.validation_path = Path(validation_path) if validation_path else Path(VAL_DATASET_PATH)
 
         unique_path = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
         if submission_path is None:
@@ -79,9 +80,11 @@ class Solver(object):
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch='discard')
 
     def get_gluon_dataset(self, dataset_path, task, dataset_type='train'):
+        assert dataset_type in ['train', 'val', 'test'], "unknow dataset type %s" % dataset_type
+
         is_shuffle = True if dataset_type == 'train' else False
         last_batch_type = 'keep' if dataset_type != 'train' else 'discard'
-        fai_dataset = utils.FaiAttrDataset(dataset_path, task)
+        fai_dataset = utils.FaiAttrDataset(dataset_path, task, dataset_type=dataset_type)
         return gluon.data.DataLoader(
             fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
 
@@ -97,8 +100,8 @@ class Solver(object):
             net = symbol
 
         # val_data = self.get_validate_data(task)
-        val_data = self.get_gluon_dataset(VAL_DATASET_PATH ,task, dataset_type='val')
-        logging.info("load validate dataset from %s" % (VAL_DATASET_PATH))
+        val_data = self.get_gluon_dataset(self.validation_path ,task, dataset_type='val')
+        logging.info("load validate dataset from %s" % (self.validation_path))
 
         metric = mx.metric.Accuracy()
         L = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -120,7 +123,7 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def predict_one_by_one(self, dataset_path, model_path, task, network='densenet201'):
+    def predict_crop_ten(self, dataset_path, model_path, task, network='densenet201'):
         logging.info('starting prediction for %s.' % task)
 
         lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
@@ -142,7 +145,7 @@ class Solver(object):
         for index, (path, task, _, _, _, _) in enumerate(task_tokens):
             raw_img = Path(dataset_path, path).open('rb').read()
             img = image.imdecode(raw_img)
-            data = utils.transform_predict(img)
+            data = utils.transform_predict_with_ten(img)
             out = net(data.as_in_context(ctx))
             out = nd.SoftmaxActivation(out).mean(axis=0)
             pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
@@ -152,37 +155,43 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def predict(self, test_dataset_path, model_path, task, symbol=None, network='densenet201'):
-        logging.info('starting predict for %s.' % task)
+    def predict_one(self, dataset_path, model_path, task, network='densenet201'):
+        logging.info('starting prediction for %s.' % task)
+
+        lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
+        self.tokens = [l.rstrip().split(',') for l in lines]
 
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
             logging.info('create %s' % self.output_submission_path)
 
+        task_tokens = [t for t in self.tokens if t[1] == task]
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
-
         ctx = self.get_ctx()[0]
-        if symbol is None:
-            net = get_pretrained_model(network, task_class_num_list[task], ctx)
-            net.load_params(model_path, ctx=ctx)
-            logging.info("load model from %s" % model_path)
-        else:
-            net = symbol
 
-        # val_data = self.get_validate_data(task)
-        test_data = self.get_gluon_dataset(test_dataset_path ,task, dataset_type='test')
-        logging.info("load test dataset from %s" % (test_dataset_path))
-        for i, batch in enumerate(test_data):
-            data = gluon.utils.split_and_load(batch[0], ctx_list=[ctx], batch_axis=0, even_split=False)
-            outputs = [net(X) for X in data]
-            for output in outputs[0]:
-                out = nd.SoftmaxActivation(output).mean(axis=0)
-                pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
-                line_out = ','.join([path, task, pred_out])
-                f_out.write(line_out + '\n')
+        net = get_pretrained_model(network, task_class_num_list[task], ctx)
+        net.load_params(model_path, ctx=ctx)
+        logging.info("load model from %s" % model_path)
+
+        for index, (path, task, _, _, _, _) in enumerate(task_tokens):
+            raw_img = Path(dataset_path, path).open('rb').read()
+            img = image.imdecode(raw_img)
+            data = utils.transform_predict_one(img)
+            out = net(data.as_in_context(ctx))
+            out = nd.softmax(out)
+            pred_out = ';'.join(["%.8f"%(o) for o in out[0].asnumpy().tolist()])
+            line_out = ','.join([path, task, pred_out])
+            f_out.write(line_out + '\n')
+            utils.progressbar(index, len(task_tokens))
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
+
+    def predict(self, dataset_path, model_path, task, network='densenet201', cropped_predict=True):
+        if cropped_predict is True:
+            return self.predict_crop_ten(dataset_path, model_path, task, network)
+        else:
+            return self.predict_one(dataset_path, model_path, task, network)
 
     def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus=None):
         if gpus:
@@ -246,7 +255,6 @@ class Solver(object):
             train_map = AP / AP_cnt
             _, train_acc = metric.get()
             train_loss /= num_batch
-
 
             saved_path = self.output_ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             finetune_net.save_params(saved_path.as_posix())
