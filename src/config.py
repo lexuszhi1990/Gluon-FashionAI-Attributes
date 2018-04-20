@@ -227,7 +227,7 @@ config.MODEL_LIST = {
         },
         'lapel_design_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-97706/lapel_design_labels-2018-04-20-18-37-epoch-18.params',
-            'network': 'densenet121',
+            'network': 'densenet201',
             'gpus' : [2],
             'num_workers' : 6,
             'batch_size' : 12,
@@ -240,7 +240,7 @@ config.MODEL_LIST = {
         },
         'neckline_design_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-63802/neckline_design_labels-2018-04-20-19-37-epoch-17.params',
-            'network': 'densenet121',
+            'network': 'densenet201',
             'gpus' : [3],
             'num_workers' : 6,
             'batch_size' : 12,
