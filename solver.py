@@ -177,8 +177,6 @@ class Solver(object):
             data = gluon.utils.split_and_load(batch[0], ctx_list=[ctx], batch_axis=0, even_split=False)
             outputs = [net(X) for X in data]
             for output in outputs[0]:
-                import pdb
-                pdb.set_trace()
                 out = nd.SoftmaxActivation(output).mean(axis=0)
                 pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
                 line_out = ','.join([path, task, pred_out])

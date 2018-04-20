@@ -1,12 +1,12 @@
 from src import utils
 from mxnet import gluon, image, init, nd
-
 TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
 VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
 test_dataset_path = '/data/david/fai_attr/transfered_data/test_v1'
 task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
-batch_size = 64
+batch_size = 32
 test_data = utils.FaiAttrDataset(test_dataset_path, task_list[0])
+
 test_dataset = gluon.data.DataLoader(test_data, batch_size)
 for data, label in test_dataset:
     print(data.shape)
@@ -52,11 +52,3 @@ for data, label in train_data:
     print(label.shape)
     break
 
-coat_length_labels.csv : 11320
-collar_design_labels.csv : 8393
-lapel_design_labels.csv : 7034
-neck_design_labels.csv : 5696
-neckline_design_labels.csv : 17148
-pant_length_labels.csv : 7460
-skirt_length_labels.csv : 19333
-sleeve_length_labels.csv : 13299

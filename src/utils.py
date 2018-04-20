@@ -156,33 +156,35 @@ class FaiAttrDataset(gluon.data.Dataset):
             raw_img_path = Path(self.dataset_path, file_name)
             assert raw_img_path.exists(), "%s not exists" % raw_img_path
             one_hot_label = [float(i) for i in output_label_list.split('_')]
-            try:
-                bbox = [int(i) for i in output_bbox_list.split('_') if len(i) > 0]
-            except Exception as e:
-                raise RuntimeError
-            # raw_image = image.imread(raw_img_path.as_posix())
-            # data[index] = raw_image
+            bbox = [int(i) for i in output_bbox_list.split('_') if len(i) > 0]
 
-            # raw_image = image.imread(raw_img_path.as_posix())
-            # norm_mask = nd.zeros((raw_image.shape[0], raw_image.shape[1], 1))
-            # concated_data = nd.zeros((raw_image.shape[0], raw_image.shape[1], 4))
-            # norm_mask[bbox[0]:bbox[0]+bbox[2], bbox[1]:bbox[1]+bbox[3], :] = 1
-            # norm_raw_data = normalize_image(raw_image)
-            # raw_image_list = nd.split(norm_raw_data, axis=2, num_outputs=3)
-            # nd.stack(raw_image_list, norm_mask, axis=0, out=concated_data)
-            # resized_concated_data = image.resize_short(concated_data, BASE_SHAPE)
+            # img_path = raw_img_path.as_posix()
+            # raw_image = image.imread(img_path)
 
             raw_label_list[index] = {"label": one_hot_label, "label_argmax_index": np.argmax(one_hot_label), "img_path": raw_img_path.as_posix(), "bbox": bbox}
         return raw_label_list
 
+    def get_img(self):
+        img_path = raw_img_path.as_posix()
+        raw_image = image.imread(img_path)
+        raw_mask = nd.zeros((raw_image.shape[0], raw_image.shape[1], 1)).astype(np.uint8)
+        concated_data = nd.zeros((raw_image.shape[0], raw_image.shape[1], 4))
+        raw_mask[bbox[0]:width, bbox[1]:height] = 255
+        mask_raw_img = nd.concat(raw_image, raw_mask, dim=2)
+        norm_mask_raw_img = normalize_image(mask_raw_img)
+        resized_norm_mask_raw_img = image.resize_short(norm_mask_raw_img, BASE_SHAPE)
+        data = resized_norm_mask_raw_img.transpose((2,0,1))
+
     def __getitem__(self, idx):
         raw_line = self.raw_label[idx]
-        # label = nd.array(raw_line['label'])
+        img_path, bbox = raw_line['img_path'], raw_line['bbox']
         label = nd.array([raw_line['label_argmax_index']])
-        raw_image = image.imread(raw_line['img_path'])
-        raw_image = image.resize_short(raw_image, 360)
-        data = normalize_image(raw_image)
-        data = data.transpose((2,0,1))
+        raw_image = image.imread(img_path)
+        # raw_image = image.resize_short(raw_image, 360)
+        raw_image = image.CenterCropAug((BASE_SHAPE, BASE_SHAPE))(raw_image)
+        raw_image = image.HorizontalFlipAug(0.5)(raw_image)
+        raw_image = normalize_image(raw_image)
+        data = raw_image.transpose((2,0,1))
         return data, label
 
     def __len__(self):
