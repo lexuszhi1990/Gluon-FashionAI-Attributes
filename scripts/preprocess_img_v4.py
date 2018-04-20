@@ -85,15 +85,21 @@ for path, task, label in tokens:
     label_dict[task].append((path, label))
 
 for img_id in coco.imgs:
-
     img_info = coco.imgs[img_id]
     task = img_info['file_name'].split('/')[1]
     img_path = Path(dataset_path, img_info['file_name'])
+
+    # if not img_path.exists():
+    #     continue
+
     assert img_path.exists(), "img_path %s not exists" % img_path
     img_raw = cv2.imread(img_path.as_posix())
     raw_label = find_label_by_path(task, img_info['file_name'])
-    one_hot_label = convert_label_to_one_hot(raw_label)
 
+    # if raw_label is None:
+    #     continue
+
+    one_hot_label = convert_label_to_one_hot(raw_label)
     dets = [det for det in detections if det['image_id'] == img_id]
     if len(dets) == 0:
         img_raw_resieze = cv2.resize(img_raw, (BASE_SHAPE, BASE_SHAPE))

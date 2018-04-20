@@ -90,15 +90,15 @@ for img_id in coco.imgs:
     task = img_info['file_name'].split('/')[1]
     img_path = Path(dataset_path, img_info['file_name'])
 
-    if not img_path.exists():
-        continue
+    # if not img_path.exists():
+    #     continue
 
     assert img_path.exists(), "img_path %s not exists" % img_path
     img_raw = cv2.imread(img_path.as_posix())
     raw_label = find_label_by_path(task, img_info['file_name'])
 
-    if raw_label is None:
-        continue
+    # if raw_label is None:
+    #     continue
 
     one_hot_label = convert_label_to_one_hot(raw_label)
 
