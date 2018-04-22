@@ -34,9 +34,3 @@ train_val_dets = json.load(Path(train_val_detection_file).open('r'))
 # train_val_list['categories'] = train_list['categories']
 # train_val_list['annotations'] = train_list['annotations']
 
-# check results
-from collections import Counter
-
-label_file_op = Path(label_file_path).open('r')
-lines = label_file_op.readlines()
-tokens = [l.rstrip().split(',') for l in lines]
