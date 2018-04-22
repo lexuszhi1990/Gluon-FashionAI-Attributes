@@ -19,11 +19,14 @@ from mxnet.gluon.model_zoo import vision as models
 from src import utils
 from src.symbol import get_pretrained_model
 
-logging.basicConfig(level=logging.INFO,
-                    handlers = [
-                        logging.StreamHandler(),
-                        logging.FileHandler('logs/training-%s.log' % ("%s"%(time.strftime("%Y-%m-%d-%H-%M"))))
-                    ])
+def setup_log(task, solver_type='training'):
+    log_path = 'logs/%s-%s-%s.log' % (solver_type, task, "%s"%(time.strftime("%Y-%m-%d-%H-%M")))
+    logging.basicConfig(level=logging.INFO,
+                        handlers = [
+                            logging.StreamHandler(),
+                            logging.FileHandler(log_path)
+                        ])
+    logging.info('create log file: %s' % log_path)
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
@@ -44,9 +47,7 @@ DEFAULT_TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
 DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
 
 class Solver(object):
-    def __init__(self, gpus=None, cpu=None, submission_path=None, validation_path=None, training_path=None):
-        self.gpus = gpus
-        self.cpu = cpu
+    def __init__(self, submission_path=None, validation_path=None, training_path=None):
 
         self.validation_path = Path(validation_path) if validation_path else Path(DEFAULT_VAL_DATASET_PATH)
         self.training_path = Path(training_path) if training_path else Path(DEFAULT_TRAIN_DATASET_PATH)
@@ -56,11 +57,8 @@ class Solver(object):
         self.output_ckpt_path = Path(self.ckpt_path, unique_path)
         self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, unique_path) if submission_path is None else Path(submission_path)
 
-        # legancy
-        self.dataset_path = Path('/data/david/fai_attr/gloun_data/train_valid')
-
     def get_ctx(self):
-        return [mx.cpu()] if self.cpu else [mx.gpu(i) for i in self.gpus]
+        return [mx.cpu()] if len(self.gpus) == 0 else [mx.gpu(i) for i in self.gpus]
 
     def get_validate_data(self, task):
         return gluon.data.DataLoader(
@@ -84,11 +82,8 @@ class Solver(object):
             fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
 
 
-    def predict_crop_ten(self, dataset_path, model_path, task, network='densenet201'):
+    def predict_crop_ten(self, dataset_path, model_path, task, gpus, network='densenet201'):
         logging.info('starting prediction for %s.' % task)
-
-        lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
-        self.tokens = [l.rstrip().split(',') for l in lines]
 
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
@@ -102,25 +97,24 @@ class Solver(object):
         net = get_pretrained_model(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
-
-        for index, (path, task, _, _, _, _) in enumerate(task_tokens):
-            raw_img = Path(dataset_path, path).open('rb').read()
+        for index, task_token in enumerate(task_tokens):
+            img_path, raw_task = task_token[:2]
+            assert raw_task == task, "task not match"
+            with Path(dataset_path, img_path).open('rb') as f:
+                raw_img = f.read()
             img = image.imdecode(raw_img)
             data = utils.transform_predict_with_ten(img)
             out = net(data.as_in_context(ctx))
             out = nd.SoftmaxActivation(out).mean(axis=0)
             pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
-            line_out = ','.join([path, task, pred_out])
+            line_out = ','.join([img_path, task, pred_out])
             f_out.write(line_out + '\n')
             utils.progressbar(index, len(task_tokens))
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def predict_one(self, dataset_path, model_path, task, network='densenet201'):
+    def predict_one(self, dataset_path, model_path, task, gpus, network='densenet201'):
         logging.info('starting prediction for %s.' % task)
-
-        lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
-        self.tokens = [l.rstrip().split(',') for l in lines]
 
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
@@ -148,14 +142,21 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def predict(self, dataset_path, model_path, task, network='densenet201', cropped_predict=True):
+    def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
+        setup_log(task, solver_type='predict')
+        self.gpus = gpus
+        # lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
+        lines = Path(dataset_path, 'Tests/question.csv').open('r').readlines()
+        self.tokens = [l.rstrip().split(',') for l in lines]
+
         if cropped_predict is True:
-            return self.predict_crop_ten(dataset_path, model_path, task, network)
+            return self.predict_crop_ten(dataset_path, model_path, task, gpus, network)
         else:
-            return self.predict_one(dataset_path, model_path, task, network)
+            return self.predict_one(dataset_path, model_path, task, gpus, network)
 
     def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers):
         logging.info('starting validating for %s.' % task)
+        setup_log(task, solver_type='validating')
         self.gpus = gpus
         ctx = self.get_ctx()
 
@@ -194,6 +195,7 @@ class Solver(object):
         return ((val_acc, val_map, val_loss))
 
     def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers):
+        setup_log(task, solver_type='training')
         self.gpus = gpus
         ctx = self.get_ctx()
 

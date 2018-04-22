@@ -112,6 +112,7 @@ def transform_predict(im):
 
 def transform_predict_with_ten(im):
     im = im.astype('float32') / 255
+    im = image.resize_short(im, 256)
     im = nd.transpose(im, (2,0,1))
     im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
     im = ten_crop(im, (224, 224))
