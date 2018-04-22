@@ -33,12 +33,12 @@ transfered_label_dict = {'coat_length_labels': [],
               'sleeve_length_labels': []}
 
 # Train
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v2.json'
-# dataset_path = '/data/david/fai_attr/raw_data/train_v1'
+# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
+# # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
+# dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
 # label_file_path = dataset_path + '/Annotations/train.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/train_v4'
+# outout_path = '/data/david/fai_attr/transfered_data/train_v5'
 
 # dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1.json'
 # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1_detection_max_5.json'
@@ -46,17 +46,17 @@ transfered_label_dict = {'coat_length_labels': [],
 # label_file_path = dataset_path + '/Annotations/val.csv'
 # outout_path = '/data/david/fai_attr/transfered_data/val_v4'
 
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
-# dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
-# label_file_path = dataset_path + '/Annotations/test.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/partial_test_v4'
+dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
+results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
+dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
+label_file_path = dataset_path + '/Annotations/test.csv'
+outout_path = '/data/david/fai_attr/transfered_data/partial_test_v5'
 
-dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
-results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
-dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
-label_file_path = dataset_path + '/Annotations/train.csv'
-outout_path = '/data/david/fai_attr/transfered_data/train_val_v1'
+# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
+# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
+# dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
+# label_file_path = dataset_path + '/Annotations/train.csv'
+# outout_path = '/data/david/fai_attr/transfered_data/train_val_v1'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
@@ -95,15 +95,16 @@ for img_id in coco.imgs:
     task = img_info['file_name'].split('/')[1]
     img_path = Path(dataset_path, img_info['file_name'])
 
-    # if not img_path.exists():
-    #     continue
+    if not img_path.exists():
+        continue
 
     assert img_path.exists(), "img_path %s not exists" % img_path
     img_raw = cv2.imread(img_path.as_posix())
+    img_raw_height, img_raw_width = img_raw.shape[:2]
     raw_label = find_label_by_path(task, img_info['file_name'])
 
-    # if raw_label is None:
-    #     continue
+    if raw_label is None:
+        continue
     assert raw_label is not None, "raw_label is None"
 
     one_hot_label = convert_label_to_one_hot(raw_label)
@@ -137,7 +138,21 @@ for img_id in coco.imgs:
 
     category_id = det['category_id']
     category_name = coco.cats[det['category_id']]['name']
+
+
+    # refine bbox according by task
     bbox = [int(i) for i in det['bbox']]
+    if task == "neck_design_labels":
+        bbox[0] = max(bbox[0] - bbox[2] * 0.2, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.2)
+
+        if bbox[1] > img_raw_height * 0.4:
+            bbox[1] = img_raw_height * 0.2
+            bbox[3] = min(img_raw_height, bbox[3] * 1.2)
+        else:
+            bbox[1] = 0
+            bbox[3] = min(img_raw_height, bbox[3] * 1.2)
+    bbox = [int(i) for i in bbox]
 
     cropped_img = img_raw[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
     c_h, c_w = cropped_img.shape[:2]
