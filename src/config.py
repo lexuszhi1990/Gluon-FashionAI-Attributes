@@ -2,6 +2,17 @@
 # bz: 12 -> 10G
 # bz: 10 -> 9G
 # bz: 8 -> 8G
+# 172 gpu:
+
+# .vvv....
+# v.vv....
+# vv.v....
+# vvv.....
+# .....vvv
+# ....v.vv
+# ....vv.v
+# ....vvv.
+
 
 from easydict import EasyDict as edict
 import numpy as np
@@ -265,13 +276,14 @@ config.MODEL_LIST = {
             'lr_steps' : [10,20,25,30,35,np.inf]
         },
         'neck_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-58-62615/neck_design_labels-2018-04-20-18-30-epoch-8.params',
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-22-16-30-82307/neck_design_labels-2018-04-22-17-12-epoch-39.params',
             'network': 'densenet201',
+            # 'gpus' : [0, 1, 2, 3, 4, 5, 6, 7],
             'gpus' : [5],
             'num_workers' : 6,
-            'batch_size' : 12,
+            'batch_size' : 10,
             'lr' : 0.001,
-            'wd' : 5e-4,
+            'wd' : 1e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,

@@ -252,7 +252,6 @@ for task in transfered_label_dict.keys():
     csv_file.close()
     print("finished writint %s " % csv_file_path)
 
-
 # coco.imgs:
 # 4073319441911775229: {'id': 4073319441911775229, 'height': 512, 'width': 512, 'file_name': 'Images/skirt_length_labels/14cff0d4c1566b53937556a56a396cb0.jpg'}
 # detection

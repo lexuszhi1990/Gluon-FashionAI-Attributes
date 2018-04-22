@@ -54,6 +54,20 @@ def calculate_ap(labels, outputs):
             op_argsort = np.argsort(op)[::-1]
             lb_int = int(lb)
             ap += 1.0 / (1+list(op_argsort).index(lb_int))
+            import pdb
+            pdb.set_trace()
+            cnt += 1
+    return ((ap, cnt))
+
+def calculate_ap_full(labels, outputs):
+    cnt = 0
+    ap = 0.
+    for label, output in zip(labels, outputs):
+        for lb, op in zip(label.asnumpy().astype(np.int),
+                          output.asnumpy()):
+            op_argsort = np.argsort(op)[::-1]
+            lb_int = np.argmax(lb)
+            ap += 1.0 / (1+list(op_argsort).index(lb_int))
             cnt += 1
     return ((ap, cnt))
 
@@ -126,18 +140,6 @@ def progressbar(i, n, bar_len=40):
 def mkdir_if_not_exist(path):
     if not os.path.exists(os.path.join(*path)):
         os.makedirs(os.path.join(*path))
-
-def calculate_ap(labels, outputs):
-    cnt = 0
-    ap = 0.
-    for label, output in zip(labels, outputs):
-        for lb, op in zip(label.asnumpy().astype(np.int),
-                          output.asnumpy()):
-            op_argsort = np.argsort(op)[::-1]
-            lb_int = int(lb)
-            ap += 1.0 / (1+list(op_argsort).index(lb_int))
-            cnt += 1
-    return ((ap, cnt))
 
 class FaiAttrDataset(gluon.data.Dataset):
 

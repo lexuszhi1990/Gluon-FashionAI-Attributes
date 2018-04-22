@@ -238,12 +238,18 @@ class Solver(object):
                         raise RuntimeError('un avaliable loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
-
                 trainer.step(self.batch_size)
                 train_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
 
                 metric.update(label, outputs)
-                ap, cnt = utils.calculate_ap(label, outputs)
+
+                if loss_type == 'sfe':
+                    ap, cnt = utils.calculate_ap(label, outputs)
+                elif loss_type == 'hinge':
+                    ap, cnt = utils.calculate_ap_full(label, outputs)
+                else:
+                    raise RuntimeError('un avaliable loss type %s' % loss_type)
+
                 AP += ap
                 AP_cnt += cnt
 
