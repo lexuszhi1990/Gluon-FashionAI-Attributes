@@ -151,6 +151,13 @@ class FaiAttrDataset(gluon.data.Dataset):
         assert self.label_path.exists(), "%s not exists" % self.label_path
         self.raw_label = self._read_images()
 
+
+    def _convert_label_to_one_hot(self, raw_label):
+        label_y = [int(l == 'y')*1 for l in raw_label]
+        label_m = [int(l == 'm')*0.5 for l in raw_label]
+        label = [x+y for x,y in zip(label_m, label_y)]
+        return label
+
     def _read_images(self):
         lines = self.label_path.open('r').readlines()
         print('load %d images' % len(lines))
@@ -162,13 +169,17 @@ class FaiAttrDataset(gluon.data.Dataset):
 
             raw_img_path = Path(self.dataset_path, file_name)
             assert raw_img_path.exists(), "%s not exists" % raw_img_path
-            one_hot_label = [float(i) for i in output_label_list.split('_')]
+            # one_hot_label = [float(i) for i in output_label_list.split('_')]
+            one_hot_label = self._convert_label_to_one_hot(raw_fai_label)
+            hinge_label = []
+            for l in one_hot_label:
+                hinge_label.append(l if l > 0 else -1)
             bbox = [int(i) for i in output_bbox_list.split('_') if len(i) > 0]
 
             # img_path = raw_img_path.as_posix()
             # raw_image = image.imread(img_path)
 
-            raw_label_list[index] = {"label": one_hot_label, "label_argmax_index": np.argmax(one_hot_label), "img_path": raw_img_path.as_posix(), "bbox": bbox}
+            raw_label_list[index] = {"one_hot_label": one_hot_label, "argmax_index_label": np.argmax(one_hot_label), "hinge_label": hinge_label, "img_path": raw_img_path.as_posix(), "bbox": bbox}
         return raw_label_list
 
     def get_img(self):
@@ -185,14 +196,13 @@ class FaiAttrDataset(gluon.data.Dataset):
     def __getitem__(self, idx):
         raw_line = self.raw_label[idx]
         img_path, bbox = raw_line['img_path'], raw_line['bbox']
-        label = nd.array([raw_line['label_argmax_index']])
         raw_image = image.imread(img_path)
         raw_image = image.resize_short(raw_image, BASE_SHAPE)
         if self.dataset_type == 'train':
             raw_image = image.HorizontalFlipAug(0.5)(raw_image)
         raw_image = normalize_image(raw_image)
         data = raw_image.transpose((2,0,1))
-        return data, label
+        return data, nd.array([raw_line['argmax_index_label']]), nd.array(raw_line['hinge_label'])
 
     def __len__(self):
         return len(self.raw_label)

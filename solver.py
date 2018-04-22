@@ -51,7 +51,7 @@ class Solver(object):
         self.validation_path = Path(validation_path) if validation_path else Path(DEFAULT_VAL_DATASET_PATH)
         self.training_path = Path(training_path) if training_path else Path(DEFAULT_TRAIN_DATASET_PATH)
         self.unique_path_id = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
-        self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, unique_path_id) if submission_path is None else Path(submission_path)
+        self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, self.unique_path_id) if submission_path is None else Path(submission_path)
 
     def get_ctx(self):
         return [mx.cpu()] if len(self.gpus) == 0 else [mx.gpu(i) for i in self.gpus]
@@ -181,7 +181,7 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers):
+    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
         setup_log(task, solver_type='training')
         self.gpus = gpus
         ctx = self.get_ctx()
@@ -190,22 +190,22 @@ class Solver(object):
         self.batch_size = batch_size * max(len(self.gpus), 1)
         logging.info('Start Training for Task: %s' % (task))
 
-        if not self.output_ckpt_path.exists():
-            self.output_ckpt_path.mkdir()
-            logging.info('create %s' % self.output_ckpt_path)
+        output_ckpt_path = Path(CKPT_PATH, "%s-%s" % (task, self.unique_path_id))
+        if not output_ckpt_path.exists():
+            output_ckpt_path.mkdir()
+            logging.info('create ckpt path: %s' % output_ckpt_path)
 
         finetune_net = get_pretrained_model(model_name, task_class_num_list[task], ctx)
 
-        # train_data = self.get_train_data(task)
-        # logging.info("load train dataset from %s for %s" % (self.dataset_path, task))
         train_data = self.get_gluon_dataset(self.training_path ,task, dataset_type='train')
-        logging.info("load validate dataset from %s" % (self.training_path))
+        logging.info("load training dataset from %s" % (self.training_path))
 
         # Define Trainer
         trainer = gluon.Trainer(finetune_net.collect_params(), 'sgd', {
             'learning_rate': lr, 'momentum': momentum, 'wd': wd})
         metric = mx.metric.Accuracy()
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
+        sfe_loss = gluon.loss.SoftmaxCrossEntropyLoss()
+        hing_loss = gluon.loss.HingeLoss()
         lr_counter = 0
         num_batch = len(train_data)
 
@@ -223,10 +223,19 @@ class Solver(object):
 
             for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-                label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                hinge_label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)
                 with ag.record():
                     outputs = [finetune_net(X) for X in data]
-                    loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+
+                    if loss_type == 'sfe':
+                        label = argmax_index_label
+                        loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
+                    elif loss_type == 'hinge':
+                        label = hinge_label
+                        loss = [hing_loss(yhat, y) for yhat, y in zip(outputs, label)]
+                    else:
+                        raise RuntimeError('un avaliable loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
 
@@ -244,7 +253,7 @@ class Solver(object):
             _, train_acc = metric.get()
             train_loss /= num_batch
 
-            saved_path = self.output_ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
+            saved_path = output_ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             finetune_net.save_params(saved_path.as_posix())
 
             val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)

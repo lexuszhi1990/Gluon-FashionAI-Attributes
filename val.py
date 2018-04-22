@@ -18,7 +18,7 @@ VERSION = 'v3'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-validation_path = '/data/david/fai_attr/transfered_data/val_v1'
+validation_path = '/data/david/fai_attr/transfered_data/val_v2'
 # validation_path = '/data/david/fai_attr/transfered_data/partial_test_v2'
 
 batch_size=8
@@ -35,7 +35,7 @@ solver = Solver(validation_path=validation_path)
 
 if len(sys.argv) == 2:
     task = sys.argv[1]
-    print("start predict single task: %s" % task)
+    print("start validating task: %s" % task)
     assert task in task_list, "UNKOWN TASK"
     details = model_dict[task]
 
@@ -43,6 +43,8 @@ if len(sys.argv) == 2:
     print('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
     f_out.write('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
 else:
+    print("start validating all tasks)
+
     val_acc_list, val_map_list, val_loss_list = [], [], []
     for index, task in enumerate(model_dict):
         details = model_dict[task]
