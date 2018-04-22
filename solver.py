@@ -48,14 +48,10 @@ DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
 
 class Solver(object):
     def __init__(self, submission_path=None, validation_path=None, training_path=None):
-
         self.validation_path = Path(validation_path) if validation_path else Path(DEFAULT_VAL_DATASET_PATH)
         self.training_path = Path(training_path) if training_path else Path(DEFAULT_TRAIN_DATASET_PATH)
-
-        unique_path = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
-        self.ckpt_path = Path(CKPT_PATH)
-        self.output_ckpt_path = Path(self.ckpt_path, unique_path)
-        self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, unique_path) if submission_path is None else Path(submission_path)
+        self.unique_path_id = "%s-%d" % (time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), np.random.randint(100000))
+        self.output_submission_path = Path(DEFAULT_SUBMISSION_PATH, unique_path_id) if submission_path is None else Path(submission_path)
 
     def get_ctx(self):
         return [mx.cpu()] if len(self.gpus) == 0 else [mx.gpu(i) for i in self.gpus]
@@ -81,15 +77,7 @@ class Solver(object):
         return gluon.data.DataLoader(
             fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
 
-
-    def predict_crop_ten(self, dataset_path, model_path, task, gpus, network='densenet201'):
-        logging.info('starting prediction for %s.' % task)
-
-        if not self.output_submission_path.exists():
-            self.output_submission_path.mkdir()
-            logging.info('create %s' % self.output_submission_path)
-
-        task_tokens = [t for t in self.tokens if t[1] == task]
+    def predict_cropped_images(self, dataset_path, model_path, task, gpus, network='densenet201'):
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
@@ -103,7 +91,7 @@ class Solver(object):
             with Path(dataset_path, img_path).open('rb') as f:
                 raw_img = f.read()
             img = image.imdecode(raw_img)
-            data = utils.transform_predict_with_ten(img)
+            data = utils.transform_cropped_img(img)
             out = net(data.as_in_context(ctx))
             out = nd.SoftmaxActivation(out).mean(axis=0)
             pred_out = ';'.join(["%.8f"%(o) for o in out.asnumpy().tolist()])
@@ -113,14 +101,7 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def predict_one(self, dataset_path, model_path, task, gpus, network='densenet201'):
-        logging.info('starting prediction for %s.' % task)
-
-        if not self.output_submission_path.exists():
-            self.output_submission_path.mkdir()
-            logging.info('create %s' % self.output_submission_path)
-
-        task_tokens = [t for t in self.tokens if t[1] == task]
+    def predict_fully_images(self, dataset_path, model_path, task, gpus, network='densenet201'):
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
@@ -128,11 +109,13 @@ class Solver(object):
         net = get_pretrained_model(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
-
-        for index, (path, task, _, _, _, _) in enumerate(task_tokens):
-            raw_img = Path(dataset_path, path).open('rb').read()
+        for index, task_token in enumerate(task_tokens):
+            img_path, raw_task = task_token[:2]
+            assert raw_task == task, "task not match"
+            with Path(dataset_path, img_path).open('rb') as f:
+                raw_img = f.read()
             img = image.imdecode(raw_img)
-            data = utils.transform_predict_one(img)
+            data = utils.transform_fully_img(img)
             out = net(data.as_in_context(ctx))
             out = nd.softmax(out)
             pred_out = ';'.join(["%.8f"%(o) for o in out[0].asnumpy().tolist()])
@@ -140,19 +123,23 @@ class Solver(object):
             f_out.write(line_out + '\n')
             utils.progressbar(index, len(task_tokens))
         f_out.close()
-        logging.info("end predicting for %s, results saved at %s" % (task, results_path))
+        logging.info("finish predicting for %s, results are saved at %s" % (task, results_path))
 
     def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
         setup_log(task, solver_type='predict')
+        logging.info('starting prediction for %s.' % task)
         self.gpus = gpus
-        # lines = Path(dataset_path, 'Annotations/%s.csv'%task).open('r').readlines()
-        lines = Path(dataset_path, 'Tests/question.csv').open('r').readlines()
-        self.tokens = [l.rstrip().split(',') for l in lines]
+        if not self.output_submission_path.exists():
+            self.output_submission_path.mkdir()
+        logging.info('submission path: %s' % self.output_submission_path)
+        with Path(dataset_path, 'Tests/question.csv').open('r') as f:
+            tokens = [l.rstrip().split(',') for l in f.readlines()]
+        self.task_tokens = [t for t in self.tokens if t[1] == task]
 
         if cropped_predict is True:
-            return self.predict_crop_ten(dataset_path, model_path, task, gpus, network)
+            return self.predict_cropped_images(dataset_path, model_path, task, gpus, network)
         else:
-            return self.predict_one(dataset_path, model_path, task, gpus, network)
+            return self.predict_fully_images(dataset_path, model_path, task, gpus, network)
 
     def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers):
         logging.info('starting validating for %s.' % task)

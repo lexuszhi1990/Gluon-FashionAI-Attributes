@@ -102,7 +102,7 @@ def transform_val(data, label):
     im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
     return (im, nd.array([label]).asscalar())
 
-def transform_predict(im):
+def transform_cropped_img(im):
     im = im.astype('float32') / 255
     im = image.resize_short(im, 256)
     im = nd.transpose(im, (2,0,1))
@@ -110,15 +110,7 @@ def transform_predict(im):
     im = ten_crop(im, (224, 224))
     return (im)
 
-def transform_predict_with_ten(im):
-    im = im.astype('float32') / 255
-    im = image.resize_short(im, 256)
-    im = nd.transpose(im, (2,0,1))
-    im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-    im = ten_crop(im, (224, 224))
-    return (im)
-
-def transform_predict_one(im):
+def transform_fully_img(im):
     im = image.resize_short(im, BASE_SHAPE)
     im = normalize_image(im)
     im = im.transpose((2,0,1))
