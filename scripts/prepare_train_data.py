@@ -27,14 +27,13 @@ def mkdir_if_not_exist(path):
     if not os.path.exists(os.path.join(*path)):
         os.makedirs(os.path.join(*path))
 
+mkdir_if_not_exist([data_path])
+
 with open(label_dir, 'r') as f:
     lines = f.readlines()
     tokens = [l.rstrip().split(',') for l in lines]
     for path, task, label in tokens:
         label_dict[task].append((path, label))
-
-mkdir_if_not_exist([data_path])
-mkdir_if_not_exist([submission_path])
 
 for task, path_label in label_dict.items():
     mkdir_if_not_exist([data_path,  task])
@@ -50,13 +49,12 @@ for task, path_label in label_dict.items():
     for path, label in path_label:
         label_index = list(label).index('y')
         src_path = os.path.join(root_path, 'base', path)
-        shutil.copy(src_path, os.path.join(data_path, task, 'train', str(label_index)))
-        # if train_count < n * 0.9:
-        #     shutil.copy(src_path,
-        #                 os.path.join(data_path, task, 'train', str(label_index)))
-        # else:
-        #     shutil.copy(src_path,
-        #                 os.path.join(data_path, task, 'val', str(label_index)))
+        if train_count < n * 0.9:
+            dest_path = os.path.join(data_path, task, 'train', str(label_index))
+        else:
+            dest_path = os.path.join(data_path, task, 'val', str(label_index))
+        shutil.copy(src_path, dest_path)
+        print("copy %s to %s" % (src_path, dest_path))
         train_count += 1
 
 # Add warmup data to skirt task
@@ -78,13 +76,10 @@ for task, path_label in label_dict.items():
     for path, label in path_label:
         label_index = list(label).index('y')
         src_path = os.path.join(root_path, 'web', path)
-        shutil.copy(src_path,
-                    os.path.join(data_path, task, 'train', str(label_index)))
-        # if train_count < n * 0.9:
-        #     shutil.copy(src_path,
-        #                 os.path.join(data_path, task, 'train', str(label_index)))
-        # else:
-        #     shutil.copy(src_path,
-        #                 os.path.join(data_path, task, 'val', str(label_index)))
+        if train_count < n * 0.9:
+            dest_path = os.path.join(data_path, task, 'train', str(label_index))
+        else:
+            dest_path = os.path.join(data_path, task, 'val', str(label_index))
+        shutil.copy(src_path, dest_path)
+        print("copy %s to %s" % (src_path, dest_path))
         train_count += 1
-

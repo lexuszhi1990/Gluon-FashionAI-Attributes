@@ -10,8 +10,10 @@
 
 import time
 import sys
+import logging
 from pathlib import Path
 from solver import Solver
+from src import utils
 from src.config import config
 
 VERSION = 'v1'
