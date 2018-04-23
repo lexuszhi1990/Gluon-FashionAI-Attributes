@@ -60,7 +60,7 @@ label_dir = os.path.join(root_path, 'base', 'Annotations/label.csv')
 warmup_label_dir = os.path.join(root_path, 'web', 'Annotations/skirt_length_labels.csv')
 ```
 
-2. generate the train and validate dataset :`python3 prepare_train_data.py`
+2. generate the train and validate dataset : `python3 prepare_train_data.py`
 
 it will generate train dataset and val dataset(9:1)
 dataset dir is :
@@ -84,7 +84,7 @@ ckpt_path = './ckpt/v1'
 
 #### training
 
-update training paremater for tasks in `src/config.py`, for example:
+update training parameters for tasks in `src/config.py`, for example:
 
 ```
 'lapel_design_labels' : {
@@ -106,7 +106,7 @@ update training paremater for tasks in `src/config.py`, for example:
 `sfe` refers to  `SoftmaxCrossEntropy` loss, and `hinge` refers to  `hinge loss`. othter params are straigtforward.
 
 then we can start to train:
-`py3 train.py lapel_design_labels`
+`python3 train.py lapel_design_labels`
 
 ![train_val_l2](./code/images/train_v2.png)
 
@@ -133,11 +133,11 @@ update the `mode_path` in `confog.py` with the previous training results.
 
 #### test one category
 
-then wen can start to predict single task: `py3 predict.py lapel_design_labels`
+then wen can start to predict single task: `python3 predict.py lapel_design_labels`
 
 ![train_val_l2](./code/images/predict_v1.png)
 
-if you update all `modal_path` in `config.py`, you can predict all task by `py3 predict.py`
+if you update all `modal_path` in `config.py` for eight categories, you can predict all tasks by `python3 predict.py`
 
 ### post processing
 
@@ -150,6 +150,4 @@ cat *.csv > submisson_20180203_040506.csv
 
 - all the code are running under `code` dir.
 - the code are tested on Nvidia 1080ti, you should update `batch_size` depend on your machine. set `gpus = []` means training on cpu.
-
-### code references
-all the code are available on my github https://github.com/lexuszhi1990/Gluon-FashionAI-Attributes
+- all the code are available on my github https://github.com/lexuszhi1990/Gluon-FashionAI-Attributes
