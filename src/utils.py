@@ -5,6 +5,8 @@ from mxnet import gluon, image, init, nd
 import numpy as np
 import os, math, argparse
 from pathlib import Path
+import time
+import logging
 
 rgb_mean = nd.array([0.485, 0.456, 0.406])
 rgb_std = nd.array([0.229, 0.224, 0.225])
@@ -45,6 +47,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def setup_log(log_id):
+    log_path = 'logs/%s-%s.log' % (log_id, "%s"%(time.strftime("%Y-%m-%d-%H-%M")))
+    logging.basicConfig(level=logging.INFO,
+                        handlers = [
+                            logging.StreamHandler(),
+                            logging.FileHandler(log_path)
+                        ])
+    logging.info('create log file: %s' % log_path)
+
 def calculate_ap(labels, outputs):
     cnt = 0
     ap = 0.
@@ -54,8 +65,6 @@ def calculate_ap(labels, outputs):
             op_argsort = np.argsort(op)[::-1]
             lb_int = int(lb)
             ap += 1.0 / (1+list(op_argsort).index(lb_int))
-            import pdb
-            pdb.set_trace()
             cnt += 1
     return ((ap, cnt))
 

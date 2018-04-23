@@ -213,6 +213,7 @@ config.MODEL_LIST = {
         'collar_design_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-15-58023/collar_design_labels-2018-04-20-19-10-epoch-11.params',
             'network': 'densenet201',
+            'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [0],
             'num_workers' : 6,
             'batch_size' : 12,
@@ -226,9 +227,10 @@ config.MODEL_LIST = {
         'skirt_length_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-51-91422/skirt_length_labels-2018-04-20-19-00-epoch-11.params',
             'network': 'densenet201',
+            'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [1],
             'num_workers' : 6,
-            'batch_size' : 12,
+            'batch_size' : 6,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,

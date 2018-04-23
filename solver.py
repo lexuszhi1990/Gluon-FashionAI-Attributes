@@ -19,15 +19,6 @@ from mxnet.gluon.model_zoo import vision as models
 from src import utils
 from src.symbol import get_pretrained_model
 
-def setup_log(task, solver_type='training'):
-    log_path = 'logs/%s-%s-%s.log' % (solver_type, task, "%s"%(time.strftime("%Y-%m-%d-%H-%M")))
-    logging.basicConfig(level=logging.INFO,
-                        handlers = [
-                            logging.StreamHandler(),
-                            logging.FileHandler(log_path)
-                        ])
-    logging.info('create log file: %s' % log_path)
-
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
 task_class_num_list = {
@@ -126,7 +117,6 @@ class Solver(object):
         logging.info("finish predicting for %s, results are saved at %s" % (task, results_path))
 
     def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
-        setup_log(task, solver_type='predict')
         logging.info('starting prediction for %s.' % task)
         self.gpus = gpus
         if not self.output_submission_path.exists():
@@ -143,7 +133,6 @@ class Solver(object):
 
     def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers):
         logging.info('starting validating for %s.' % task)
-        setup_log(task, solver_type='validating')
         self.gpus = gpus
         ctx = self.get_ctx()
 
@@ -182,7 +171,7 @@ class Solver(object):
         return ((val_acc, val_map, val_loss))
 
     def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
-        setup_log(task, solver_type='training')
+
         self.gpus = gpus
         ctx = self.get_ctx()
 

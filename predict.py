@@ -27,9 +27,12 @@ cropped_predict=True
 solver = Solver(submission_path=submission_path)
 if len(sys.argv) == 2:
     task = sys.argv[1]
-    print("start predict single task: %s" % task)
     assert task in task_list, "UNKOWN TASK"
     details = model_dict[task]
+
+    utils.setup_log("%s-%s-%s-%s" % ('predicting', task, details['network'], details['loss_type']))
+    logging.info("start training single task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
+
     # predict(dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True)
     solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=gpus, network=details['network'], cropped_predict=cropped_predict)
 else:
