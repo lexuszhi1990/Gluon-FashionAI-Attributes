@@ -7,7 +7,7 @@ from mxnet import autograd as ag
 from mxnet.gluon import nn
 from mxnet.gluon.model_zoo import vision as models
 
-CKPT_PATH = '/data/david/models/fai_attrbutes/v1'
+CKPT_PATH = '/data/david/models/fai_attrbutes/v2'
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',

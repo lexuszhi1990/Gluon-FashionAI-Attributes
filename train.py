@@ -10,31 +10,34 @@
 # task = 'sleeve_length_labels'
 # py3 train.py neck_design_labels
 
-import sys
+import sys, os
 import time
 from pathlib import Path
 from solver import Solver
 import numpy as np
+import logging
+
+from src import utils
 from src.config import config
 
-VERSION = 'v3'
+training_path = "../data/train_valid"
+validation_path = "../data/train_valid"
+ckpt_path = './ckpt/v1'
 
+VERSION = 'v1'
 model_dict = config.MODEL_LIST[VERSION]
-
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-task = sys.argv[1]
-assert task in task_list, "UNKOWN TASK"
+# os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = 0
+# os.environ['CUDA_VISIBLE_DEVICES'] = str(details['gpu'])
 
-num_workers = 4
-batch_size = 8
-lr = 0.001
-lr_factor = 0.75
-epochs = 20
-lr_steps = [5,10,15,np.inf]
-wd = 1e-4
-momentum = 0.9
+solver = Solver(training_path=training_path, validation_path=validation_path, ckpt_path=ckpt_path)
+if len(sys.argv) == 2:
+    task = sys.argv[1]
+    assert task in task_list, "UNKOWN TASK"
+    details = model_dict[task]
 
-details = model_dict[task]
-solver = Solver(batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=[details['gpu']])
-solver.train(task=task, model_name=details['network'], epochs=epochs, lr=details['lr'], momentum=momentum, wd=wd, lr_factor=lr_factor, lr_steps=lr_steps)
+    utils.setup_log("%s-%s-%s-%s" % ('training', task, details['network'], details['loss_type']))
+    logging.info("start training task: %s\n parameters: %s\n training_path: %s, validation_path: %s" % (task, details, training_path, validation_path))
+
+    solver.train(task=task, model_name=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=details['gpus'], batch_size=details['batch_size'], num_workers=details['num_workers'], loss_type=details['loss_type'])

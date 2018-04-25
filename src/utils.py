@@ -5,6 +5,12 @@ from mxnet import gluon, image, init, nd
 import numpy as np
 import os, math, argparse
 from pathlib import Path
+import time
+import logging
+
+rgb_mean = nd.array([0.485, 0.456, 0.406])
+rgb_std = nd.array([0.229, 0.224, 0.225])
+BASE_SHAPE = 360
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Gluon for FashionAI Competition',
@@ -41,6 +47,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def setup_log(log_id):
+    log_path = 'logs/%s-%s.log' % (log_id, "%s"%(time.strftime("%Y-%m-%d-%H-%M")))
+    logging.basicConfig(level=logging.INFO,
+                        handlers = [
+                            logging.StreamHandler(),
+                            logging.FileHandler(log_path)
+                        ])
+    logging.info('create log file: %s' % log_path)
+
 def calculate_ap(labels, outputs):
     cnt = 0
     ap = 0.
@@ -52,6 +67,21 @@ def calculate_ap(labels, outputs):
             ap += 1.0 / (1+list(op_argsort).index(lb_int))
             cnt += 1
     return ((ap, cnt))
+
+def calculate_ap_full(labels, outputs):
+    cnt = 0
+    ap = 0.
+    for label, output in zip(labels, outputs):
+        for lb, op in zip(label.asnumpy().astype(np.int),
+                          output.asnumpy()):
+            op_argsort = np.argsort(op)[::-1]
+            lb_int = np.argmax(lb)
+            ap += 1.0 / (1+list(op_argsort).index(lb_int))
+            cnt += 1
+    return ((ap, cnt))
+
+def normalize_image(data):
+    return (data.astype('float32') / 255 - rgb_mean) / rgb_std
 
 def ten_crop(img, size):
     H, W = size
@@ -95,12 +125,19 @@ def transform_val(data, label):
     im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
     return (im, nd.array([label]).asscalar())
 
-def transform_predict(im):
+def transform_cropped_img(im):
     im = im.astype('float32') / 255
     im = image.resize_short(im, 256)
     im = nd.transpose(im, (2,0,1))
     im = mx.nd.image.normalize(im, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
     im = ten_crop(im, (224, 224))
+    return (im)
+
+def transform_fully_img(im):
+    im = image.resize_short(im, BASE_SHAPE)
+    im = normalize_image(im)
+    im = im.transpose((2,0,1))
+    im = im.expand_dims(axis=0)
     return (im)
 
 def progressbar(i, n, bar_len=40):
@@ -113,36 +150,24 @@ def mkdir_if_not_exist(path):
     if not os.path.exists(os.path.join(*path)):
         os.makedirs(os.path.join(*path))
 
-def calculate_ap(labels, outputs):
-    cnt = 0
-    ap = 0.
-    for label, output in zip(labels, outputs):
-        for lb, op in zip(label.asnumpy().astype(np.int),
-                          output.asnumpy()):
-            op_argsort = np.argsort(op)[::-1]
-            lb_int = int(lb)
-            ap += 1.0 / (1+list(op_argsort).index(lb_int))
-            cnt += 1
-    return ((ap, cnt))
-
-
-rgb_mean = nd.array([0.485, 0.456, 0.406])
-rgb_std = nd.array([0.229, 0.224, 0.225])
-BASE_SHAPE = 360
-
-def normalize_image(data):
-    return (data.astype('float32') / 255 - rgb_mean) / rgb_std
-
 class FaiAttrDataset(gluon.data.Dataset):
 
-    def __init__(self, dataset_path, task, dataset_type=None):
+    def __init__(self, dataset_path, task, dataset_type='train'):
 
         self.dataset_path = dataset_path
         self.task = task
+        self.dataset_type = dataset_type
 
         self.label_path = Path(self.dataset_path, "Annotations", "%s.csv"%task)
         assert self.label_path.exists(), "%s not exists" % self.label_path
         self.raw_label = self._read_images()
+
+
+    def _convert_label_to_one_hot(self, raw_label):
+        label_y = [int(l == 'y')*1 for l in raw_label]
+        label_m = [int(l == 'm')*0.5 for l in raw_label]
+        label = [x+y for x,y in zip(label_m, label_y)]
+        return label
 
     def _read_images(self):
         lines = self.label_path.open('r').readlines()
@@ -155,13 +180,17 @@ class FaiAttrDataset(gluon.data.Dataset):
 
             raw_img_path = Path(self.dataset_path, file_name)
             assert raw_img_path.exists(), "%s not exists" % raw_img_path
-            one_hot_label = [float(i) for i in output_label_list.split('_')]
+            # one_hot_label = [float(i) for i in output_label_list.split('_')]
+            one_hot_label = self._convert_label_to_one_hot(raw_fai_label)
+            hinge_label = []
+            for l in one_hot_label:
+                hinge_label.append(l if l > 0 else -1)
             bbox = [int(i) for i in output_bbox_list.split('_') if len(i) > 0]
 
             # img_path = raw_img_path.as_posix()
             # raw_image = image.imread(img_path)
 
-            raw_label_list[index] = {"label": one_hot_label, "label_argmax_index": np.argmax(one_hot_label), "img_path": raw_img_path.as_posix(), "bbox": bbox}
+            raw_label_list[index] = {"one_hot_label": one_hot_label, "argmax_index_label": np.argmax(one_hot_label), "hinge_label": hinge_label, "img_path": raw_img_path.as_posix(), "bbox": bbox}
         return raw_label_list
 
     def get_img(self):
@@ -178,14 +207,13 @@ class FaiAttrDataset(gluon.data.Dataset):
     def __getitem__(self, idx):
         raw_line = self.raw_label[idx]
         img_path, bbox = raw_line['img_path'], raw_line['bbox']
-        label = nd.array([raw_line['label_argmax_index']])
         raw_image = image.imread(img_path)
-        # raw_image = image.resize_short(raw_image, 360)
-        raw_image = image.CenterCropAug((BASE_SHAPE, BASE_SHAPE))(raw_image)
-        raw_image = image.HorizontalFlipAug(0.5)(raw_image)
+        raw_image = image.resize_short(raw_image, BASE_SHAPE)
+        if self.dataset_type == 'train':
+            raw_image = image.HorizontalFlipAug(0.5)(raw_image)
         raw_image = normalize_image(raw_image)
         data = raw_image.transpose((2,0,1))
-        return data, label
+        return data, nd.array([raw_line['argmax_index_label']]), nd.array(raw_line['hinge_label'])
 
     def __len__(self):
         return len(self.raw_label)
