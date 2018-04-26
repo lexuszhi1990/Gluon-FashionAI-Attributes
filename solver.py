@@ -9,7 +9,7 @@ from mxnet import gluon, image, nd
 from mxnet import autograd as ag
 
 from src import utils
-from src.symbol import get_pretrained_model
+from src.symbol import get_pretrained_densenet, get_dense_net
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
@@ -67,7 +67,7 @@ class Solver(object):
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_pretrained_model(network, task_class_num_list[task], ctx)
+        net = get_dense_net(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
         for index, task_token in enumerate(self.task_tokens):
@@ -91,7 +91,7 @@ class Solver(object):
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_pretrained_model(network, task_class_num_list[task], ctx)
+        net = get_dense_net(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
         for index, task_token in enumerate(task_tokens):
@@ -134,7 +134,8 @@ class Solver(object):
         self.batch_size = batch_size
 
         if symbol is None:
-            net = get_pretrained_model(network, task_class_num_list[task], ctx)
+            net = get_dense_net(network, task_class_num_list[task], ctx)
+
             net.load_params(model_path, ctx=ctx)
             logging.info("load model from %s" % model_path)
         else:
@@ -176,9 +177,9 @@ class Solver(object):
             self.ckpt_path.mkdir()
             logging.info('create ckpt path: %s' % self.ckpt_path)
 
-        finetune_net = get_pretrained_model(model_name, task_class_num_list[task], ctx)
+        finetune_net = get_dense_net(model_name, task_class_num_list[task], ctx)
 
-        train_data = self.get_image_folder_data(self.training_path ,task, dataset_type='train')
+        train_data = self.get_gluon_dataset(self.training_path ,task, dataset_type='train')
         logging.info("load training dataset from %s" % (self.training_path))
 
         # Define Trainer

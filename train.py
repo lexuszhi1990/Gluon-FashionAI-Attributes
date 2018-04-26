@@ -20,11 +20,11 @@ import logging
 from src import utils
 from src.config import config
 
-training_path = "../data/train_valid"
-validation_path = "../data/train_valid"
-ckpt_path = './ckpt/v1'
+training_path = "/data/david/fai_attr/transfered_data/train_v6"
+validation_path = "/data/david/fai_attr/transfered_data/val_v6"
+ckpt_path = '/data/david/models/fai_attrbutes/v2'
 
-VERSION = 'v1'
+VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
