@@ -40,4 +40,4 @@ if len(sys.argv) == 2:
     utils.setup_log("%s-%s-%s-%s" % ('training', task, details['network'], details['loss_type']))
     logging.info("start training task: %s\n parameters: %s\n training_path: %s, validation_path: %s" % (task, details, training_path, validation_path))
 
-    solver.train(task=task, model_name=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=details['gpus'], batch_size=details['batch_size'], num_workers=details['num_workers'], loss_type=details['loss_type'])
+    solver.train(task=task, network=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=details['gpus'], batch_size=details['batch_size'], num_workers=details['num_workers'], loss_type=details['loss_type'])

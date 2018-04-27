@@ -77,14 +77,13 @@ def dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 24, 1
     return net
 
 
-def get_dense_net(network_name, num_classes, ctx):
-    if network_name == "densenet121":
-        net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 24, 16], num_classes = num_classes)
-    elif network_name == "densenet201":
-        net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 48, 32], num_classes = num_classes)
-    else:
-        raise RuntimeError("wrong input")
-
+def get_densenet121_net(num_classes, ctx):
+    net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 24, 16], num_classes = num_classes)
     net.initialize(ctx=ctx, init=init.Xavier())
+    return net
 
+
+def get_densenet201_net(num_classes, ctx):
+    net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 48, 32], num_classes = num_classes)
+    net.initialize(ctx=ctx, init=init.Xavier())
     return net

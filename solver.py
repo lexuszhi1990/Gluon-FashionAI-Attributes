@@ -9,7 +9,7 @@ from mxnet import gluon, image, nd
 from mxnet import autograd as ag
 
 from src import utils
-from src.symbol import get_pretrained_densenet, get_dense_net
+from src.symbol import get_symbol
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
@@ -51,7 +51,6 @@ class Solver(object):
                 transform=utils.transform_train),
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch=last_batch_type)
 
-
     def get_gluon_dataset(self, dataset_path, task, dataset_type='train'):
         assert dataset_type in ['train', 'val', 'test'], "unknow dataset type %s" % dataset_type
 
@@ -67,9 +66,10 @@ class Solver(object):
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_dense_net(network, task_class_num_list[task], ctx)
+        net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
+
         for index, task_token in enumerate(self.task_tokens):
             img_path, raw_task = task_token[:2]
             assert raw_task == task, "task not match"
@@ -91,7 +91,7 @@ class Solver(object):
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_dense_net(network, task_class_num_list[task], ctx)
+        net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
         for index, task_token in enumerate(task_tokens):
@@ -113,9 +113,11 @@ class Solver(object):
     def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
         logging.info('starting prediction for %s.' % task)
         self.gpus = gpus
+
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
         logging.info('submission path: %s' % self.output_submission_path)
+
         with Path(dataset_path, 'Tests/question.csv').open('r') as f:
             tokens = [l.rstrip().split(',') for l in f.readlines()]
         self.task_tokens = [t for t in tokens if t[1] == task]
@@ -134,8 +136,7 @@ class Solver(object):
         self.batch_size = batch_size
 
         if symbol is None:
-            net = get_dense_net(network, task_class_num_list[task], ctx)
-
+            net = get_symbol(network, task_class_num_list[task], ctx)
             net.load_params(model_path, ctx=ctx)
             logging.info("load model from %s" % model_path)
         else:
@@ -164,26 +165,23 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
+    def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
+        logging.info('Entrying the training for Task: %s' % (task))
 
         self.gpus = gpus
         ctx = self.get_ctx()
-
         self.num_workers = num_workers
         self.batch_size = batch_size * max(len(self.gpus), 1)
-        logging.info('Start Training for Task: %s' % (task))
-
         if not self.ckpt_path.exists():
             self.ckpt_path.mkdir()
             logging.info('create ckpt path: %s' % self.ckpt_path)
 
-        finetune_net = get_dense_net(model_name, task_class_num_list[task], ctx)
-
         train_data = self.get_gluon_dataset(self.training_path ,task, dataset_type='train')
         logging.info("load training dataset from %s" % (self.training_path))
 
+        net = get_symbol(network, task_class_num_list[task], ctx)
         # Define Trainer
-        trainer = gluon.Trainer(finetune_net.collect_params(), 'sgd', {
+        trainer = gluon.Trainer(net.collect_params(), 'sgd', {
             'learning_rate': lr, 'momentum': momentum, 'wd': wd})
         metric = mx.metric.Accuracy()
         sfe_loss = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -208,7 +206,7 @@ class Solver(object):
                 argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
                 hinge_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
                 with ag.record():
-                    outputs = [finetune_net(X) for X in data]
+                    outputs = [net(X) for X in data]
 
                     if loss_type == 'sfe':
                         label = argmax_index_label
@@ -242,13 +240,13 @@ class Solver(object):
             train_loss /= num_batch
 
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
-            finetune_net.save_params(saved_path.as_posix())
+            net.save_params(saved_path.as_posix())
 
-            val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=model_name, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)
             # val_acc, val_map, val_loss = 0, 0, 0
 
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
             logging.info('\nsave results at %s' % saved_path)
 
-        return finetune_net
+        return net
