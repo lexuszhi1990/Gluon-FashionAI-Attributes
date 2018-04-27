@@ -94,9 +94,10 @@ class Solver(object):
         net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
+
         for index, task_token in enumerate(task_tokens):
             img_path, raw_task = task_token[:2]
-            assert raw_task == task, "task not match"
+            assert raw_task == task, "task not match %s" % task
             with Path(dataset_path, img_path).open('rb') as f:
                 raw_img = f.read()
             img = image.imdecode(raw_img)
@@ -108,6 +109,7 @@ class Solver(object):
             f_out.write(line_out + '\n')
             utils.progressbar(index, len(task_tokens))
         f_out.close()
+
         logging.info("finish predicting for %s, results are saved at %s" % (task, results_path))
 
     def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
@@ -142,7 +144,7 @@ class Solver(object):
         else:
             net = symbol
 
-        val_data = self.get_image_folder_data(self.training_path ,task, dataset_type='train')
+        val_data = self.get_gluon_dataset(self.validation_path ,task, dataset_type='val')
         logging.info("load validate dataset from %s" % (self.validation_path))
 
         metric = mx.metric.Accuracy()
@@ -157,6 +159,7 @@ class Solver(object):
             metric.update(label, outputs)
             loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
             val_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
+            # ap, cnt = utils.calculate_basic_precision(label, outputs)
             ap, cnt = utils.calculate_ap(label, outputs)
             AP += ap
             AP_cnt += cnt
@@ -200,7 +203,6 @@ class Solver(object):
             metric.reset()
             AP = 0.
             AP_cnt = 0
-
             for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
                 argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
@@ -213,9 +215,10 @@ class Solver(object):
                         loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
                     elif loss_type == 'hinge':
                         label = hinge_label
+                        # outputs = [nd.sigmoid(X) for x in outputs]
                         loss = [hing_loss(yhat, y) for yhat, y in zip(outputs, label)]
                     else:
-                        raise RuntimeError('un avaliable loss type %s' % loss_type)
+                        raise RuntimeError('unknown loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
                 trainer.step(self.batch_size)
@@ -241,12 +244,10 @@ class Solver(object):
 
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             net.save_params(saved_path.as_posix())
-
-            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=model_name, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)
+            logging.info('\nsave results at %s' % saved_path)
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)
             # val_acc, val_map, val_loss = 0, 0, 0
-
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
-            logging.info('\nsave results at %s' % saved_path)
 
         return net

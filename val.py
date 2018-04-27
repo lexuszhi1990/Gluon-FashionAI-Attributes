@@ -10,15 +10,18 @@
 
 import time
 import sys
+import logging
 from pathlib import Path
 from solver import Solver
+
+from src import utils
 from src.config import config
 
-VERSION = 'v3'
+VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-validation_path = '/data/david/fai_attr/transfered_data/val_v2'
+validation_path = '/data/david/fai_attr/transfered_data/val_v6'
 
 batch_size=8
 num_workers=4
@@ -37,7 +40,7 @@ if len(sys.argv) == 2:
 
     val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=gpus)
     logging.info('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
-    f_out.write('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
+
 else:
     utils.setup_log("%s" % ('validating-all-tasks'))
     logging.info("start training task: %s\n validation_path: %s" % (task, validation_path))

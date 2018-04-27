@@ -281,7 +281,7 @@ config.MODEL_LIST = {
             'lr_steps' : [10,20,25,30,35,np.inf]
         },
         'neck_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-22-16-30-82307/neck_design_labels-2018-04-22-17-12-epoch-39.params',
+            'model_path': '/data/david/models/fai_attrbutes/v2/neck_design_labels-2018-04-26-18-16-epoch-0.params',
             'network': 'densenet201',
             'loss_type' : 'sfe', # [hinge/sfe]
             # 'gpus' : [0, 1, 2, 3, 4, 5, 6, 7],

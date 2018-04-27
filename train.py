@@ -28,7 +28,7 @@ VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-# os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = 0
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 # os.environ['CUDA_VISIBLE_DEVICES'] = str(details['gpu'])
 
 solver = Solver(training_path=training_path, validation_path=validation_path, ckpt_path=ckpt_path)
