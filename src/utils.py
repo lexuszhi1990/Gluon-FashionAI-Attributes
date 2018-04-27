@@ -80,6 +80,20 @@ def calculate_ap_full(labels, outputs):
             cnt += 1
     return ((ap, cnt))
 
+# https://tianchi.aliyun.com/competition/information.htm?spm=5176.100067.5678.2.28013a26P0p2gQ&raceId=231649
+# 我们还会展示BasicPrecision指标，即模型在测试集全部预测输出(ProbThreshold=0)情况下每个属性维度准确率的平均值，
+# 作为更直接的准确率预估指标供大家参考。在BasicPrecision = 0.7时，排名得分mAP一般在 0.93 左右
+def calculate_basic_precision(labels, outputs):
+    pred_count = 0
+    pred_correct_count = 0
+    for label, output in zip(labels, outputs):
+        for lb, op in zip(label.asnumpy().astype(np.int),
+                          output.asnumpy()):
+            if np.argmax(op) == int(lb):
+                pred_correct_count += 1
+            pred_count += 1
+    return ((pred_correct_count/pred_count, pred_count))
+
 def normalize_image(data):
     return (data.astype('float32') / 255 - rgb_mean) / rgb_std
 

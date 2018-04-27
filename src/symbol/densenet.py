@@ -15,7 +15,7 @@ def get_pretrained_densenet(model_name, task_num_class, ctx):
     return finetune_net
 
 def conv_block(channels):
-    out = nn.Sequential()
+    out = nn.HybridSequential()
     out.add(
         nn.BatchNorm(),
         nn.Activation('relu'),
@@ -24,7 +24,7 @@ def conv_block(channels):
     return out
 
 def transition_block(channels):
-    out = nn.Sequential()
+    out = nn.HybridSequential()
     out.add(
         nn.BatchNorm(),
         nn.Activation('relu'),
