@@ -12,7 +12,6 @@ framework mxnet:
 
 install mxnet reference: https://mxnet.incubator.apache.org/install/index.html
 
-### project overview
 
 ```
 Project

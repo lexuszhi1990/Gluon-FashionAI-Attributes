@@ -9,7 +9,9 @@ from mxnet import gluon, image, nd
 from mxnet import autograd as ag
 
 from src import utils
+# available symbols: [densenet121, densenet201, pretrained_densenet121, pretrained_densenet201]
 from src.symbol import get_symbol
+
 
 os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 

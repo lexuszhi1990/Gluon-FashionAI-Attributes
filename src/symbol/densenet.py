@@ -14,6 +14,13 @@ def get_pretrained_densenet(model_name, task_num_class, ctx):
 
     return finetune_net
 
+def get_pretrained_densenet201_symbol(task_num_class, ctx):
+    return get_pretrained_densenet("densenet201", task_num_class, ctx)
+
+def get_pretrained_densenet121_symbol(task_num_class, ctx):
+    return get_pretrained_densenet("densenet121", task_num_class, ctx)
+
+
 def conv_block(channels):
     out = nn.HybridSequential()
     out.add(
@@ -77,13 +84,13 @@ def dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 24, 1
     return net
 
 
-def get_densenet121_net(num_classes, ctx):
+def get_densenet121_symbol(num_classes, ctx):
     net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 24, 16], num_classes = num_classes)
     net.initialize(ctx=ctx, init=init.Xavier())
     return net
 
 
-def get_densenet201_net(num_classes, ctx):
+def get_densenet201_symbol(num_classes, ctx):
     net = dense_net(init_channels = 64, growth_rate = 32, block_layers = [6, 12, 48, 32], num_classes = num_classes)
     net.initialize(ctx=ctx, init=init.Xavier())
     return net
