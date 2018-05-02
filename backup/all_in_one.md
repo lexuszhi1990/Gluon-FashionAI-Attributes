@@ -1,3 +1,14 @@
+### combine datasets
+
+cp round1_z_rank/Images/coat_length_labels/* round2_train_dir/TRAIN_V1/Images/coat_length_labels
+cp round1_z_rank/Images/collar_design_labels/* round2_train_dir/TRAIN_V1/Images/collar_design_labels
+cp round1_z_rank/Images/lapel_design_labels/* round2_train_dir/TRAIN_V1/Images/lapel_design_labels
+cp round1_z_rank/Images/neck_design_labels/* round2_train_dir/TRAIN_V1/Images/neck_design_labels
+cp round1_z_rank/Images/neckline_design_labels/* round2_train_dir/TRAIN_V1/Images/neckline_design_labels
+cp round1_z_rank/Images/pant_length_labels/* round2_train_dir/TRAIN_V1/Images/pant_length_labels
+cp round1_z_rank/Images/skirt_length_labels/* round2_train_dir/TRAIN_V1/Images/skirt_length_labels
+cp round1_z_rank/Images/sleeve_length_labels/* round2_train_dir/TRAIN_V1/Images/sleeve_length_labels
+
 
 ### generate coco-like dataset
 
