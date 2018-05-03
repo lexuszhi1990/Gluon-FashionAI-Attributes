@@ -211,8 +211,8 @@ config.MODEL_LIST = {
 
     "v4": {
         'collar_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-15-58023/collar_design_labels-2018-04-20-19-10-epoch-11.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-05-03-09-38-47639/collar_design_labels-2018-05-03-09-42-epoch-0.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [0],
             'num_workers' : 6,
@@ -226,11 +226,11 @@ config.MODEL_LIST = {
         },
         'skirt_length_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-51-91422/skirt_length_labels-2018-04-20-19-00-epoch-11.params',
-            'network': 'densenet201',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [1],
             'num_workers' : 6,
-            'batch_size' : 6,
+            'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
@@ -240,7 +240,7 @@ config.MODEL_LIST = {
         },
         'lapel_design_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-97706/lapel_design_labels-2018-04-20-18-37-epoch-18.params',
-            'network': 'densenet201',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [2],
             'num_workers' : 6,
@@ -254,7 +254,7 @@ config.MODEL_LIST = {
         },
         'neckline_design_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-63802/neckline_design_labels-2018-04-20-19-37-epoch-17.params',
-            'network': 'densenet201',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [3],
             'num_workers' : 6,
@@ -268,7 +268,7 @@ config.MODEL_LIST = {
         },
         'coat_length_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-10-3387/coat_length_labels-2018-04-20-19-50-epoch-11.params',
-            'network': 'densenet201',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [4],
             'num_workers' : 6,
@@ -282,12 +282,11 @@ config.MODEL_LIST = {
         },
         'neck_design_labels' : {
             'model_path': '/data/david/models/fai_attrbutes/v2/neck_design_labels-2018-04-26-18-16-epoch-0.params',
-            'network': 'densenet201',
-            'loss_type' : 'sfe', # [hinge/sfe]
-            # 'gpus' : [0, 1, 2, 3, 4, 5, 6, 7],
-            'gpus' : [4, 5, 6, 7],
+            'network': 'pretrained_densenet201',
+            'loss_type' : 'hinge', # [hinge/sfe]
+            'gpus' : [5],
             'num_workers' : 6,
-            'batch_size' : 10,
+            'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 1e-4,
             'momentum' : 0.9,
@@ -298,7 +297,7 @@ config.MODEL_LIST = {
         },
         'pant_length_labels' : {
             'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-17-35-93141/pant_length_labels-2018-04-20-18-33-epoch-11.params',
-            'network': 'densenet201',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [6],
             'num_workers' : 6,
@@ -312,8 +311,8 @@ config.MODEL_LIST = {
 
         },
         'sleeve_length_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-12-4240/sleeve_length_labels-2018-04-20-19-44-epoch-13.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-05-03-09-55-86945/sleeve_length_labels-2018-05-03-10-02-epoch-0.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [7],
             'num_workers' : 6,
