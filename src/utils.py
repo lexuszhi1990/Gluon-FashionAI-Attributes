@@ -89,10 +89,10 @@ def calculate_basic_precision(labels, outputs):
     for label, output in zip(labels, outputs):
         for lb, op in zip(label.asnumpy().astype(np.int),
                           output.asnumpy()):
-            if np.argmax(op) == int(lb):
+            if np.argmax(op) == np.argmax(lb):
                 pred_correct_count += 1
             pred_count += 1
-    return ((pred_correct_count/pred_count, pred_count))
+    return ((pred_correct_count, pred_count))
 
 def normalize_image(data):
     return (data.astype('float32') / 255 - rgb_mean) / rgb_std
