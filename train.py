@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-# usage:
-# task = 'collar_design_labels'
-# task = 'skirt_length_labels'
-# task = 'lapel_design_labels'
-# task = 'neckline_design_labels'
-# task = 'coat_length_labels'
-# task = 'neck_design_labels'
-# task = 'pant_length_labels'
-# task = 'sleeve_length_labels'
-# py3 train.py neck_design_labels
+
+"""
+tasks: ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels',]
+py3 train.py neck_design_labels
+"""
 
 import sys, os
 import time
@@ -20,9 +15,10 @@ import logging
 from src import utils
 from src.config import config
 
-training_path = "/data/david/fai_attr/transfered_data/train_v6"
+training_path = "/data/david/fai_attr/transfered_data/train_val_v1"
 validation_path = "/data/david/fai_attr/transfered_data/val_v6"
-ckpt_path = '/data/david/models/fai_attrbutes/v2'
+# ckpt_path = '/data/david/models/fai_attrbutes/round2_v1.1'
+ckpt_path = None
 
 VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
