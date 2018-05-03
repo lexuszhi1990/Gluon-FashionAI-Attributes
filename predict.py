@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-# task = 'collar_design_labels'
-# task = 'skirt_length_labels'
-# task = 'lapel_design_labels'
-# task = 'neckline_design_labels'
-# task = 'coat_length_labels'
-# task = 'neck_design_labels'
-# task = 'pant_length_labels'
-# task = 'sleeve_length_labels'
+
+"""
+tasks: ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels',]
+py3 predict.py sleeve_length_labels
+"""
 
 import time
 import sys
@@ -16,15 +13,15 @@ from solver import Solver
 from src import utils
 from src.config import config
 
-VERSION = 'v1'
+VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-test_dataset_path = '../data/z_rank'
-submission_path = '../submit/v1'
+test_dataset_path = "/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.1"
+submission_path = '/data/david/fai_attr/round2/v1.1'
 
 gpus = [2]
-cropped_predict=True
+cropped_predict=False
 
 solver = Solver(submission_path=submission_path)
 if len(sys.argv) == 2:
@@ -34,10 +31,8 @@ if len(sys.argv) == 2:
 
     utils.setup_log("%s-%s-%s-%s" % ('predicting', task, details['network'], details['loss_type']))
     logging.info("start training single task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
-
-    # predict(dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True)
-    solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=gpus, network=details['network'], cropped_predict=cropped_predict)
+    solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=gpus, network=details['network'], cropped_predict=cropped_predict, loss_type=details['loss_type'])
 else:
     for index, task in enumerate(model_dict):
         details = model_dict[task]
-        solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=gpus, network=details['network'], cropped_predict=cropped_predict)
+        solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=gpus, network=details['network'], cropped_predict=cropped_predict, loss_type=details['loss_type'])
