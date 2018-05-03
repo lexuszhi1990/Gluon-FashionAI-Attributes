@@ -15,9 +15,9 @@ import logging
 from src import utils
 from src.config import config
 
-training_path = "/data/david/fai_attr/transfered_data/train_val_v1"
-validation_path = "/data/david/fai_attr/transfered_data/val_v6"
-# ckpt_path = '/data/david/models/fai_attrbutes/round2_v1.1'
+training_path = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1"
+validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
+# ckpt_path = '/data/david/fai_attr/submissions/round2/v0.1'
 ckpt_path = None
 
 VERSION = 'v4'

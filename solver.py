@@ -26,10 +26,10 @@ task_class_num_list = {
     'sleeve_length_labels': 9
 }
 
-CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
-DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
-DEFAULT_TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
-DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
+CKPT_PATH = '/data/david/fai_attr/ckpt'
+DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/submissions/default_round2'
+DEFAULT_TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1"
+DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
 
 class Solver(object):
     def __init__(self, ckpt_path=None, submission_path=None, validation_path=None, training_path=None):
