@@ -94,13 +94,14 @@ class Solver(object):
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
     def predict_fully_images(self, dataset_path, model_path, task, gpus, network='densenet201', loss_type='sfe'):
+
         with Path(dataset_path, 'Annotations/%s.csv' % task).open('r') as f:
             task_tokens = [l.rstrip().split(',') for l in f.readlines()]
-
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
-        ctx = self.get_ctx()[0]
 
+        ctx = self.get_ctx()[0]
+        tic = time.time()
         net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
@@ -128,7 +129,7 @@ class Solver(object):
 
         f_out.close()
 
-        logging.info("finish predicting for %s, results are saved at %s" % (task, results_path))
+        logging.info("finish predicting for %s, results are saved at %s | time costs: %.1fs" % (task, results_path, time.time() - tic))
 
     def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=False, loss_type='sfe'):
         logging.info('starting prediction for %s.' % task)
@@ -181,8 +182,8 @@ class Solver(object):
                 loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
             elif loss_type == 'hinge':
                 label = hinge_label
-                outputs = [nd.tanh(X) for X in outputs]
-                loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, label)]
+                hinge_outputs = [nd.tanh(X) for X in outputs]
+                loss = [hinge_loss(yhat, y) for yhat, y in zip(hinge_outputs, label)]
             else:
                 raise RuntimeError('unknown loss type %s' % loss_type)
 
@@ -247,8 +248,8 @@ class Solver(object):
                         loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
                     elif loss_type == 'hinge':
                         label = hinge_label
-                        outputs = [nd.tanh(X) for X in outputs]
-                        loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, label)]
+                        hinge_outputs = [nd.tanh(X) for X in outputs]
+                        loss = [hinge_loss(yhat, y) for yhat, y in zip(hinge_outputs, label)]
                     else:
                         raise RuntimeError('unknown loss type %s' % loss_type)
                 for l in loss:
