@@ -15,10 +15,13 @@ import logging
 from src import utils
 from src.config import config
 
-# training_path = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1"
-# validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
-training_path = "/data/david/fai_attr/transfered_data/ROUND1/train_v6"
-validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = str(details['gpu'])
+
+training_path = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1"
+validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
+# training_path = "/data/david/fai_attr/transfered_data/ROUND1/train_v6"
+# validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
 
 # ckpt_path = '/data/david/fai_attr/submissions/round2/v0.1'
 ckpt_path = None
@@ -26,9 +29,6 @@ ckpt_path = None
 VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
-
-# os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
-# os.environ['CUDA_VISIBLE_DEVICES'] = str(details['gpu'])
 
 solver = Solver(training_path=training_path, validation_path=validation_path, ckpt_path=ckpt_path)
 if len(sys.argv) == 2:

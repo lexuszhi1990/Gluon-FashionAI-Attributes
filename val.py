@@ -18,7 +18,7 @@ VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
+validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
 solver = Solver(validation_path=validation_path)
 
 if len(sys.argv) == 2:

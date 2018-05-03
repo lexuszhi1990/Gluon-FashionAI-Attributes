@@ -12,9 +12,6 @@ from src import utils
 # available symbols: [densenet121, densenet201, pretrained_densenet121, pretrained_densenet201]
 from src.symbol import get_symbol
 
-
-os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
-
 task_class_num_list = {
     'collar_design_labels': 5,
     'skirt_length_labels': 6,
@@ -173,22 +170,20 @@ class Solver(object):
         for i, batch in enumerate(val_data):
 
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-            argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
             hinge_label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)
             outputs = [net(X) for X in data]
 
             if loss_type == 'sfe':
-                label = argmax_index_label
                 loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
             elif loss_type == 'hinge':
-                label = hinge_label
-                hinge_outputs = [nd.tanh(X) for X in outputs]
-                loss = [hinge_loss(yhat, y) for yhat, y in zip(hinge_outputs, label)]
+                loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, hinge_label)]
+                outputs = [nd.softmax(X) for X in outputs]
             else:
                 raise RuntimeError('unknown loss type %s' % loss_type)
 
             val_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
-            metric.update(argmax_index_label, outputs)
+            metric.update(label, outputs)
             batch_pred_correct_count, batch_pred_count = utils.calculate_basic_precision(label, outputs)
             pred_count += batch_pred_count
             pred_correct_count += batch_pred_correct_count
@@ -217,7 +212,7 @@ class Solver(object):
         net = get_symbol(network, task_class_num_list[task], ctx)
         # Define Trainer
         trainer = gluon.Trainer(net.collect_params(), 'sgd', {
-            'learning_rate': lr, 'momentum': momentum, 'wd': wd})
+            'learning_rate': lr, 'momentum': momentum, 'wd': wd}, kvstore='device')
         metric = mx.metric.Accuracy()
         sfe_loss = gluon.loss.SoftmaxCrossEntropyLoss()
         hinge_loss = gluon.loss.HingeLoss()
@@ -238,25 +233,23 @@ class Solver(object):
 
             for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-                argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
                 hinge_label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)
                 with ag.record():
                     outputs = [net(X) for X in data]
 
                     if loss_type == 'sfe':
-                        label = argmax_index_label
                         loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
                     elif loss_type == 'hinge':
-                        label = hinge_label
-                        hinge_outputs = [nd.tanh(X) for X in outputs]
-                        loss = [hinge_loss(yhat, y) for yhat, y in zip(hinge_outputs, label)]
+                        loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, hinge_label)]
+                        outputs = [nd.softmax(X) for X in outputs]
                     else:
                         raise RuntimeError('unknown loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
                 trainer.step(self.batch_size)
                 train_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
-                metric.update(argmax_index_label, outputs)
+                metric.update(label, outputs)
 
                 # ap, cnt = utils.calculate_ap(label, outputs)
                 batch_pred_correct_count, batch_pred_count = utils.calculate_basic_precision(label, outputs)
@@ -272,8 +265,8 @@ class Solver(object):
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             net.save_params(saved_path.as_posix())
             logging.info('\nsave results at %s' % saved_path)
-            # val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers, loss_type=loss_type)
-            val_acc, val_map, val_loss = 0, 0, 0
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers, loss_type=loss_type)
+            # val_acc, val_map, val_loss = 0, 0, 0
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
 
