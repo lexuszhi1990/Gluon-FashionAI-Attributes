@@ -50,15 +50,14 @@ class Solver(object):
                 transform=utils.transform_train),
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch=last_batch_type)
 
-    def get_gluon_dataset(self, dataset_path, task, dataset_type='train'):
+    def get_gluon_dataset(self, dataset_path, task, batch_size, num_workers, dataset_type='train'):
         assert dataset_type in ['train', 'val', 'test'], "unknow dataset type %s" % dataset_type
-
         is_shuffle = True if dataset_type == 'train' else False
         last_batch_type = 'keep' if dataset_type != 'train' else 'discard'
 
         fai_dataset = utils.FaiAttrDataset(dataset_path, task, dataset_type=dataset_type)
         return gluon.data.DataLoader(
-            fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
+            fai_dataset, batch_size=batch_size, shuffle=is_shuffle, num_workers=num_workers, last_batch=last_batch_type)
 
     def predict_cropped_images(self, dataset_path, model_path, task, gpus, network='densenet201', loss_type='sfe'):
 
@@ -146,9 +145,6 @@ class Solver(object):
         self.gpus = gpus
         ctx = self.get_ctx()
 
-        self.num_workers = num_workers
-        self.batch_size = batch_size
-
         if symbol is None:
             net = get_symbol(network, task_class_num_list[task], ctx)
             net.load_params(model_path, ctx=ctx)
@@ -156,7 +152,7 @@ class Solver(object):
         else:
             net = symbol
 
-        val_data = self.get_gluon_dataset(self.validation_path, task, dataset_type='val')
+        val_data = self.get_gluon_dataset(self.validation_path, task, batch_size, num_workers, dataset_type='val')
         logging.info("load validate dataset from %s" % (self.validation_path))
 
         metric = mx.metric.Accuracy()
@@ -197,16 +193,14 @@ class Solver(object):
 
     def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
         logging.info('Entrying the training for Task: %s' % (task))
-
         self.gpus = gpus
         ctx = self.get_ctx()
-        self.num_workers = num_workers
-        self.batch_size = batch_size * max(len(self.gpus), 1)
+
         if not self.ckpt_path.exists():
             self.ckpt_path.mkdir()
             logging.info('create ckpt path: %s' % self.ckpt_path)
 
-        train_data = self.get_gluon_dataset(self.training_path ,task, dataset_type='train')
+        train_data = self.get_gluon_dataset(self.training_path, task, batch_size, num_workers, dataset_type='train')
         logging.info("load training dataset from %s" % (self.training_path))
 
         net = get_symbol(network, task_class_num_list[task], ctx)
@@ -265,8 +259,8 @@ class Solver(object):
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             net.save_params(saved_path.as_posix())
             logging.info('\nsave results at %s' % saved_path)
-            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers, loss_type=loss_type)
-            # val_acc, val_map, val_loss = 0, 0, 0
+            # val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers, loss_type=loss_type)
+            val_acc, val_map, val_loss = 0, 0, 0
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
 

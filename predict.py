@@ -31,13 +31,13 @@ if len(sys.argv) == 2:
     details = model_dict[task]
 
     utils.setup_log("%s-%s-%s-%s" % ('predicting', task, details['network'], details['loss_type']))
-    logging.info("start training single task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
+    logging.info("start to predict task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
     current_gpus = details['gpus'] if gpus is None else gpus
     solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=current_gpus, network=details['network'], cropped_predict=cropped_predict, loss_type=details['loss_type'])
 else:
     utils.setup_log("%s" % ('predict-all-tasks'))
     for index, task in enumerate(model_dict):
         details = model_dict[task]
-        logging.info("start training single task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
+        logging.info("start to predict task: %s\n test_dataset_path: %s, parameters: %s" % (task, test_dataset_path, details))
         current_gpus = details['gpus'] if gpus is None else gpus
         solver.predict(test_dataset_path, model_path=details['model_path'], task=task, gpus=current_gpus, network=details['network'], cropped_predict=cropped_predict, loss_type=details['loss_type'])

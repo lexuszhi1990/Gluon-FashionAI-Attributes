@@ -227,9 +227,9 @@ config.MODEL_LIST = {
         'skirt_length_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-20-01-98821/skirt_length_labels-2018-05-03-20-52-epoch-7.params',
             'network': 'pretrained_densenet201',
-            'loss_type' : 'sfe', # [hinge/sfe]
-            'gpus' : [1],
-            'num_workers' : 8,
+            'loss_type' : 'hinge', # [hinge/sfe]
+            'gpus' : [4,5],
+            'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,
@@ -313,9 +313,9 @@ config.MODEL_LIST = {
         'sleeve_length_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-19-52-59791/sleeve_length_labels-2018-05-03-20-52-epoch-6.params',
             'network': 'pretrained_densenet201',
-            'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [7],
-            'num_workers' : 8,
+            'loss_type' : 'sfe', # [hinge/sfe]
+            'gpus' : [4,6,7],
+            'num_workers' : 24,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,

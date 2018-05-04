@@ -25,11 +25,11 @@ if len(sys.argv) == 2:
     task = sys.argv[1]
     assert task in task_list, "UNKOWN TASK"
     details = model_dict[task]
-
-    utils.setup_log("%s-%s-%s-%s" % ('validating', task, details['network'], details['loss_type']))
+    batch_size = details['batch_size'] * max(len(details['gpus']), 1)
     logging.info("start to validate single task: %s\n validation path: %s, parameters: %s" % (task, validation_path, details))
+    utils.setup_log("%s-%s-%s-%s" % ('validating', task, details['network'], details['loss_type']))
 
-    val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=details['gpus'], loss_type=details['loss_type'])
+    val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=batch_size, num_workers=details['num_workers'], gpus=details['gpus'], loss_type=details['loss_type'])
     logging.info('[%s]\n [model: %s]\n [nework: %s] Val-acc: %.3f, mAP: %.3f, loss: %.3f\n' % (task, details['model_path'], details['network'], val_acc, val_map, val_loss))
 
 else:
@@ -39,9 +39,10 @@ else:
     val_acc_list, val_map_list, val_loss_list = [], [], []
     for index, task in enumerate(model_dict):
         details = model_dict[task]
+        batch_size = details['batch_size'] * max(len(details['gpus']), 1)
         logging.info("start training single task: %s\n validation path: %s, parameters: %s" % (task, validation_path, details))
 
-        val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=details['batch_size'], num_workers=details['num_workers'], gpus=details['gpus'], loss_type=details['loss_type'])
+        val_acc, val_map, val_loss = solver.validate(None, model_path=details['model_path'], task=task, network=details['network'], batch_size=batch_size, num_workers=details['num_workers'], gpus=details['gpus'], loss_type=details['loss_type'])
         val_acc_list.append(val_acc)
         val_map_list.append(val_map)
         val_loss_list.append(val_loss)
