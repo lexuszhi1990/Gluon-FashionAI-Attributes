@@ -225,12 +225,12 @@ config.MODEL_LIST = {
             'lr_steps' : [10,20,25,30,35,np.inf]
         },
         'skirt_length_labels' : {
-            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-20-01-98821/skirt_length_labels-2018-05-03-20-52-epoch-7.params',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-10-52-19712/skirt_length_labels-2018-05-04-13-09-epoch-39.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [4,5],
             'num_workers' : 12,
-            'batch_size' : 12,
+            'batch_size' : 8,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
@@ -296,11 +296,11 @@ config.MODEL_LIST = {
 
         },
         'pant_length_labels' : {
-            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-19-52-97849/pant_length_labels-2018-05-03-20-47-epoch-7.params',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-11-07-29483/pant_length_labels-2018-05-04-13-37-epoch-39.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [6],
-            'num_workers' : 6,
+            'gpus' : [4,5],
+            'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,
@@ -311,11 +311,11 @@ config.MODEL_LIST = {
 
         },
         'sleeve_length_labels' : {
-            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-19-52-59791/sleeve_length_labels-2018-05-03-20-52-epoch-6.params',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-11-49-48917/sleeve_length_labels-2018-05-04-14-20-epoch-27.params',
             'network': 'pretrained_densenet201',
-            'loss_type' : 'sfe', # [hinge/sfe]
-            'gpus' : [4,6,7],
-            'num_workers' : 24,
+            'loss_type' : 'hinge', # [hinge/sfe]
+            'gpus' : [2,3],
+            'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,

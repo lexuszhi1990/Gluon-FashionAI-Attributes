@@ -191,7 +191,7 @@ class Solver(object):
         logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
         return ((val_acc, val_map, val_loss))
 
-    def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
+    def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe', model_path=None, resume=False):
         logging.info('Entrying the training for Task: %s' % (task))
         self.gpus = gpus
         ctx = self.get_ctx()
@@ -241,7 +241,7 @@ class Solver(object):
                         raise RuntimeError('unknown loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
-                trainer.step(self.batch_size)
+                trainer.step(batch_size)
                 train_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
                 metric.update(label, outputs)
 
@@ -259,8 +259,8 @@ class Solver(object):
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             net.save_params(saved_path.as_posix())
             logging.info('\nsave results at %s' % saved_path)
-            # val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers, loss_type=loss_type)
-            val_acc, val_map, val_loss = 0, 0, 0
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=batch_size, num_workers=self.num_workers, loss_type=loss_type)
+            # val_acc, val_map, val_loss = 0, 0, 0
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
 
