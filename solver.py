@@ -53,7 +53,7 @@ class Solver(object):
     def get_gluon_dataset(self, dataset_path, task, batch_size, num_workers, dataset_type='train'):
         assert dataset_type in ['train', 'val', 'test'], "unknow dataset type %s" % dataset_type
         is_shuffle = True if dataset_type == 'train' else False
-        last_batch_type = 'keep' if dataset_type != 'train' else 'discard'
+        last_batch_type = 'keep' if dataset_type == 'test' else 'discard'
 
         fai_dataset = utils.FaiAttrDataset(dataset_path, task, dataset_type=dataset_type)
         return gluon.data.DataLoader(

@@ -19,7 +19,7 @@ os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '1'
 # os.environ['CUDA_VISIBLE_DEVICES'] = str(details['gpu'])
 
 training_path = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2"
-validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
+validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v7"
 # training_path = "/data/david/fai_attr/transfered_data/ROUND1/train_v6"
 # validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
 

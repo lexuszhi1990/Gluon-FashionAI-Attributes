@@ -138,31 +138,61 @@ for img_relative_path, task, label in tokens:
     # expand the size to 30% according by the width
 
     if task == "neck_design_labels":
-        bbox[0] = max(bbox[0] - bbox[2] * 0.2, 0)
-        bbox[2] = min(img_raw_width, bbox[2] * 1.2)
-        if bbox[1] > img_raw_height * 0.3:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.2)
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+        if bbox[1] > img_raw_height * 0.2:
+            bbox[1] = img_raw_height * 0.1
+        else:
+            bbox[1] = img_raw_height * 0.01
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.2)
     elif task == "neckline_design_labels":
-        if bbox[1] > img_raw_height * 0.3:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.2)
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+        if bbox[1] > img_raw_height * 0.2:
+            bbox[1] = img_raw_height * 0.1
+        else:
+            bbox[1] = img_raw_height * 0.01
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.2)
     elif task == "collar_design_labels":
-        if bbox[1] > img_raw_height * 0.4:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.3)
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+        if bbox[1] > img_raw_height * 0.2:
+            bbox[1] = img_raw_height * 0.1
+        else:
+            bbox[1] = img_raw_height * 0.05
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.3)
     elif task == "lapel_design_labels":
-        if bbox[1] > img_raw_height * 0.4:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+        if bbox[1] > img_raw_height * 0.3:
+            bbox[1] = img_raw_height * 0.1
+        else:
+            bbox[1] = img_raw_height * 0.05
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
+
     elif task in ['sleeve_length_labels']:
-        if bbox[1] > img_raw_height * 0.4:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.5)
-        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
+        # 6e4360353852141ecf8d51f3d2706be3.jpg
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+
+        if bbox[1] > img_raw_height * 0.3:
+            bbox[1] = max(0, img_raw_height * 0.1)
+        else:
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
+
+        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
+
     elif task in ['coat_length_labels']:
-        if bbox[1] > img_raw_height * 0.4:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.5)
-        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+
+        if bbox[1] > img_raw_height * 0.3:
+            bbox[1] = max(0, img_raw_height * 0.1)
+        else:
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
+
+        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
+
     elif task in ['skirt_length_labels']:
         # wrong image id: ['69fc8936d8c04f2e30796ea90138966a.jpg']
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
@@ -172,10 +202,12 @@ for img_relative_path, task, label in tokens:
             bbox[1] = img_raw_height * 0.2
         else:
             bbox[1] = max(0, bbox[1] - bbox[3] * 0.3)
+
         if bbox[3]+bbox[1] <= img_raw_height * 0.8:
             bbox[3] = (img_raw_height-bbox[1]-1)*0.90
         else:
             bbox[3] = (img_raw_height-bbox[1]-1)*0.99
+
     elif task in ['pant_length_labels']:
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
         bbox[2] = min(img_raw_width, bbox[2] * 1.5)
