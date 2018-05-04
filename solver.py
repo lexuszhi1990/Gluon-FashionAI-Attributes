@@ -207,6 +207,10 @@ class Solver(object):
         logging.info("load training dataset from %s" % (self.training_path))
 
         net = get_symbol(network, task_class_num_list[task], ctx)
+        if resume and Path(model_path).exists():
+            net.load_params(model_path, ctx=ctx)
+            logging.info("load model from %s" % (model_path))
+
         # Define Trainer
         trainer = gluon.Trainer(net.collect_params(), 'sgd', {
             'learning_rate': lr, 'momentum': momentum, 'wd': wd}, kvstore='device')
