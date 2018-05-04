@@ -222,7 +222,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'skirt_length_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-04-10-52-19712/skirt_length_labels-2018-05-04-13-09-epoch-39.params',
@@ -236,7 +236,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'lapel_design_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-19-50-81092/lapel_design_labels-2018-05-03-20-48-epoch-18.params',
@@ -250,7 +250,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'neckline_design_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-31-83724/neckline_design_labels-2018-05-03-20-51-epoch-16.params',
@@ -264,7 +264,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'coat_length_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-31-47266/coat_length_labels-2018-05-03-20-47-epoch-18.params',
@@ -278,13 +278,13 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'neck_design_labels' : {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-17-57-48502/neck_design_labels-2018-05-03-19-32-epoch-39.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'sfe', # [hinge/sfe]
-            'gpus' : [6,7],
+            'gpus' : [4,5],
             'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
@@ -292,7 +292,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         },
         'pant_length_labels' : {
@@ -307,7 +307,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         },
         'sleeve_length_labels' : {
@@ -322,7 +322,7 @@ config.MODEL_LIST = {
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         }
     }

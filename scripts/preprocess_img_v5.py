@@ -37,7 +37,11 @@ dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
 dataset_json_file = dataset_path + '/Annotations/label_coco.json'
 results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
 label_file_path = dataset_path + '/Annotations/label_without_head.csv'
-outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
+
+# with new crop methods
+# outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
+# 1.3: remove the not exists samples
+outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.3'
 
 # dataset_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1.json'
 # results_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1_detection_max_5.json'
@@ -74,14 +78,20 @@ detections = json.load(Path(results_json_file).open())
 # [x['name'] for x in coco.cats.values()]
 cat_list = ['blouse', 'dress', 'outwear', 'skirt', 'trousers']
 task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
+total_nums = 0
 no_dets_nums = 0
 match_nums = 0
+not_exist_nums = 0
 
 label_file_op = Path(label_file_path).open('r')
 lines = label_file_op.readlines()
 tokens = [l.rstrip().split(',') for l in lines]
 
 for img_relative_path, task, label in tokens:
+
+    if task != 'sleeve_length_labels':
+        continue
+
     label_dict[task].append((img_relative_path, label))
 
     img_infos = [img_info for img_info in coco.imgs.values() if img_info['file_name'] == img_relative_path]
@@ -100,6 +110,10 @@ for img_relative_path, task, label in tokens:
     if raw_label is None:
         continue
     assert raw_label is not None, "raw_label is None"
+
+    if raw_label[0] == 'y':
+        not_exist_nums += 1
+        continue
 
     one_hot_label = convert_label_to_one_hot(raw_label)
     dets = [det for det in detections if det['image_id'] == img_info['id']]
@@ -143,7 +157,7 @@ for img_relative_path, task, label in tokens:
         if bbox[1] > img_raw_height * 0.2:
             bbox[1] = img_raw_height * 0.1
         else:
-            bbox[1] = img_raw_height * 0.01
+            bbox[1] = 0
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.2)
     elif task == "neckline_design_labels":
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
@@ -151,7 +165,7 @@ for img_relative_path, task, label in tokens:
         if bbox[1] > img_raw_height * 0.2:
             bbox[1] = img_raw_height * 0.1
         else:
-            bbox[1] = img_raw_height * 0.01
+            bbox[1] = 0
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.2)
     elif task == "collar_design_labels":
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
@@ -159,7 +173,7 @@ for img_relative_path, task, label in tokens:
         if bbox[1] > img_raw_height * 0.2:
             bbox[1] = img_raw_height * 0.1
         else:
-            bbox[1] = img_raw_height * 0.05
+            bbox[1] = 0
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.3)
     elif task == "lapel_design_labels":
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
@@ -167,7 +181,7 @@ for img_relative_path, task, label in tokens:
         if bbox[1] > img_raw_height * 0.3:
             bbox[1] = img_raw_height * 0.1
         else:
-            bbox[1] = img_raw_height * 0.05
+            bbox[1] = 0
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
 
     elif task in ['sleeve_length_labels']:
@@ -176,11 +190,11 @@ for img_relative_path, task, label in tokens:
         bbox[2] = min(img_raw_width, bbox[2] * 1.5)
 
         if bbox[1] > img_raw_height * 0.3:
-            bbox[1] = max(0, img_raw_height * 0.1)
+            bbox[1] = img_raw_height * 0.1
         else:
-            bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.5)
 
-        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
+        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
 
     elif task in ['coat_length_labels']:
         bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
@@ -191,7 +205,7 @@ for img_relative_path, task, label in tokens:
         else:
             bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
 
-        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
+        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
 
     elif task in ['skirt_length_labels']:
         # wrong image id: ['69fc8936d8c04f2e30796ea90138966a.jpg']
@@ -248,9 +262,11 @@ for img_relative_path, task, label in tokens:
     # output_label_pkl_path = Path(output_imgs_path, img_path.stem+'.pkl')
     # total_results = {"image": resize_img.astype(float), "raw_label": raw_label, "one_hot_label": one_hot_label}
     # pickle.dump(total_results, output_label_pkl_path.open("w"))
+    total_nums += 1
 
-print("total matched %d/%d" % (match_nums, len(coco.imgs)))
-print("no dets matched %d/%d" % (no_dets_nums, len(coco.imgs)))
+print("total matched %d/%d" % (match_nums, total_nums))
+print("no dets matched %d/%d" % (no_dets_nums, total_nums))
+print("no exits number %d/%d" % (not_exist_nums, total_nums))
 
 for task in transfered_label_dict.keys():
     csv_file_path = Path(outout_path, 'Annotations', "%s.csv" % task)
