@@ -33,49 +33,23 @@ transfered_label_dict = {'coat_length_labels': [],
               'sleeve_length_labels': []}
 
 # Train
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_warmup.json'
-# # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_warmup_results-max-all.json'
-# dataset_path = '/data/david/fai_attr/raw_data/train_v1'
-# label_file_path = dataset_path + '/Annotations/train.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/train_v6'
+dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
+dataset_json_file = dataset_path + '/Annotations/label_coco.json'
+results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
+label_file_path = dataset_path + '/Annotations/label_without_head.csv'
+outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
 
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
-# # results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_val_results-v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
-# dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
-# label_file_path = dataset_path + '/Annotations/train.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/train_v5'
-
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/validation_v1_detection_max_5.json'
-# dataset_path = '/data/david/fai_attr/raw_data/val_v1'
+# dataset_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1.json'
+# results_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1_detection_max_5.json'
+# dataset_path = '/data/david/fai_attr/raw_data/ROUND1/val_v1'
 # label_file_path = dataset_path + '/Annotations/val.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/val_v6'
-
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/test_v1_detection_max_5.json'
-# dataset_path = '/data/david/fai_attr/raw_data/partial_test_for_val_v2'
-# label_file_path = dataset_path + '/Annotations/test.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/partial_test_v5'
-
-# dataset_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1.json'
-# results_json_file = '/data/david/fai_attr/gloun_data/detection_labels/train_validation_v1_detection_max_5.json'
-# dataset_path = '/data/david/fai_attr/raw_data/train_val_v1'
-# label_file_path = dataset_path + '/Annotations/train.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/train_val_v1'
+# outout_path = '/data/david/fai_attr/transfered_data/ROUND1/val_v7'
 
 # dataset_path = '/data/david/fai_attr/raw_data/ROUND2/RANK_V1'
 # dataset_json_file = dataset_path + '/Tests/question_coco.json'
 # results_json_file = dataset_path + '/Tests/detections_question_coco_results.json'
 # label_file_path = dataset_path + '/Tests/question_origin.csv'
 # outout_path = '/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.1'
-
-dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
-dataset_json_file = dataset_path + '/Annotations/label_coco.json'
-results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
-label_file_path = dataset_path + '/Annotations/label_without_head.csv'
-outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
