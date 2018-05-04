@@ -22,9 +22,11 @@ training_path = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2"
 validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v7"
 # training_path = "/data/david/fai_attr/transfered_data/ROUND1/train_v6"
 # validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
-
 # ckpt_path = '/data/david/fai_attr/submissions/round2/v0.1'
 ckpt_path = None
+
+# gpus = None
+gpus = [2]
 
 VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
@@ -34,10 +36,25 @@ solver = Solver(training_path=training_path, validation_path=validation_path, ck
 if len(sys.argv) == 2:
     task = sys.argv[1]
     assert task in task_list, "UNKOWN TASK"
+
     details = model_dict[task]
-    batch_size = details['batch_size'] * max(len(details['gpus']), 1)
+    current_gpus = details['gpus'] if gpus is None else gpus
+    batch_size = details['batch_size'] * max(len(current_gpus), 1)
 
     utils.setup_log("%s-%s-%s-%s" % ('training', task, details['network'], details['loss_type']))
     logging.info("start training task: %s\n parameters: %s\n training_path: %s, validation_path: %s" % (task, details, training_path, validation_path))
 
-    solver.train(task=task, network=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=details['gpus'], batch_size=batch_size, num_workers=details['num_workers'], loss_type=details['loss_type'], model_path=details['model_path'], resume=True)
+    solver.train(task=task, network=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=current_gpus, batch_size=batch_size, num_workers=details['num_workers'], loss_type=details['loss_type'], model_path=details['model_path'], resume=True)
+
+else:
+    utils.setup_log("%s" % ('train-all-tasks'))
+
+    for index, task in enumerate(model_dict):
+        details = model_dict[task]
+        current_gpus = details['gpus'] if gpus is None else gpus
+        batch_size = details['batch_size'] * max(len(current_gpus), 1)
+
+        utils.setup_log("%s-%s-%s-%s" % ('training', task, details['network'], details['loss_type']))
+        logging.info("start training task: %s\n parameters: %s\n training_path: %s, validation_path: %s" % (task, details, training_path, validation_path))
+
+        solver.train(task=task, network=details['network'], epochs=details['epochs'], lr=details['lr'], momentum=details['momentum'], wd=details['wd'], lr_factor=details['lr_factor'], lr_steps=details['lr_steps'], gpus=current_gpus, batch_size=batch_size, num_workers=details['num_workers'], loss_type=details['loss_type'], model_path=details['model_path'], resume=True)

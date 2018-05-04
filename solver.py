@@ -142,6 +142,8 @@ class Solver(object):
 
     def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers, loss_type='sfe'):
         logging.info('starting validating for %s.' % task)
+        tic = time.time()
+
         self.gpus = gpus
         ctx = self.get_ctx()
 
@@ -188,7 +190,8 @@ class Solver(object):
 
         _, val_acc = metric.get()
         val_map, val_loss = pred_correct_count / pred_count, val_loss / len(val_data)
-        logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
+        logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' % (task, val_acc, val_map, val_loss, time.time() - tic))
+
         return ((val_acc, val_map, val_loss))
 
     def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe', model_path=None, resume=False):
