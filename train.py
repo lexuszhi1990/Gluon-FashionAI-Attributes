@@ -23,10 +23,10 @@ validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v7"
 # training_path = "/data/david/fai_attr/transfered_data/ROUND1/train_v6"
 # validation_path = "/data/david/fai_attr/transfered_data/ROUND1/val_v6"
 # ckpt_path = '/data/david/fai_attr/submissions/round2/v0.1'
-cpkt_path = None
+ckpt_path = None
 gpus = None
 # gpus = [2]
-resuming = False
+resume = True
 
 VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]

@@ -37,7 +37,6 @@ dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
 dataset_json_file = dataset_path + '/Annotations/label_coco.json'
 results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
 label_file_path = dataset_path + '/Annotations/label_without_head.csv'
-
 # with new crop methods
 # outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
 # 1.3: remove the not exists samples
@@ -53,7 +52,7 @@ outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.3'
 # dataset_json_file = dataset_path + '/Tests/question_coco.json'
 # results_json_file = dataset_path + '/Tests/detections_question_coco_results.json'
 # label_file_path = dataset_path + '/Tests/question_origin.csv'
-# outout_path = '/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.1'
+# outout_path = '/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.2'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
@@ -83,17 +82,22 @@ total_nums = 0
 no_dets_nums = 0
 match_nums = 0
 not_exist_nums = 0
+current_task = None
 
 label_file_op = Path(label_file_path).open('r')
 lines = label_file_op.readlines()
 tokens = [l.rstrip().split(',') for l in lines]
 
+if len(sys.argv) == 2:
+    current_task = sys.argv[1]
+    assert current_task in task_list, "UNKOWN TASK"
+    print("load labels for %s" % (current_task))
+
 for img_relative_path, task, label in tokens:
 
-    if task != 'coat_length_labels':
-        continue
-
-    label_dict[task].append((img_relative_path, label))
+    if current_task is not None:
+        if task != current_task:
+            continue
 
     img_infos = [img_info for img_info in coco.imgs.values() if img_info['file_name'] == img_relative_path]
     assert len(img_infos) >= 1
@@ -112,9 +116,9 @@ for img_relative_path, task, label in tokens:
         continue
     assert raw_label is not None, "raw_label is None"
 
-    if raw_label[0] == 'y':
-        not_exist_nums += 1
-        continue
+    # if raw_label[0] == 'y':
+    #     not_exist_nums += 1
+    #     continue
 
     one_hot_label = convert_label_to_one_hot(raw_label)
     dets = [det for det in detections if det['image_id'] == img_info['id']]
@@ -126,8 +130,6 @@ for img_relative_path, task, label in tokens:
         print("no dets for %s " % img_info['file_name'])
         continue
 
-    # choose best det here
-    # task_list = ['coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'skirt_length_labels', 'collar_design_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
     det_names = [coco.cats[det['category_id']]['name'] for det in dets]
     if task in ['sleeve_length_labels', 'coat_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'collar_design_labels', 'neck_design_labels']:
         for cat_name in ["outwear", 'blouse', 'dress']:
@@ -270,6 +272,9 @@ print("no dets matched %d/%d" % (no_dets_nums, total_nums))
 print("no exits number %d/%d" % (not_exist_nums, total_nums))
 
 for task in transfered_label_dict.keys():
+    if len(transfered_label_dict[task]) > 0:
+        continue
+
     csv_file_path = Path(outout_path, 'Annotations', "%s.csv" % task)
     if not csv_file_path.parent.exists():
         csv_file_path.parent.mkdir(parents=True)

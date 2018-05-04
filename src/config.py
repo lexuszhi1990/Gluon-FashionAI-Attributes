@@ -270,9 +270,9 @@ config.MODEL_LIST = {
             'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-31-47266/coat_length_labels-2018-05-03-20-47-epoch-18.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [4],
+            'gpus' : [0,1],
             'num_workers' : 6,
-            'batch_size' : 12,
+            'batch_size' : 10,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
