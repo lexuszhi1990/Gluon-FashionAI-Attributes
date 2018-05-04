@@ -99,22 +99,24 @@ for img_relative_path, task, label in tokens:
         if task != current_task:
             continue
 
+    label_dict[task].append((img_relative_path, label))
+
     img_infos = [img_info for img_info in coco.imgs.values() if img_info['file_name'] == img_relative_path]
     assert len(img_infos) >= 1
     img_info = img_infos[0]
     img_path = Path(dataset_path, img_info['file_name'])
 
+    assert img_path.exists(), "img_path %s not exists" % img_path
     if not img_path.exists():
         continue
 
-    assert img_path.exists(), "img_path %s not exists" % img_path
     img_raw = cv2.imread(img_path.as_posix())
     img_raw_height, img_raw_width = img_raw.shape[:2]
     raw_label = find_label_by_path(task, img_info['file_name'])
 
+    assert raw_label is not None, "raw_label is None"
     if raw_label is None:
         continue
-    assert raw_label is not None, "raw_label is None"
 
     # if raw_label[0] == 'y':
     #     not_exist_nums += 1
