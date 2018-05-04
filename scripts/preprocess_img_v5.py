@@ -75,7 +75,7 @@ dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
 dataset_json_file = dataset_path + '/Annotations/label_coco.json'
 results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
 label_file_path = dataset_path + '/Annotations/label_without_head.csv'
-outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1'
+outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
 
 for file_path in [dataset_json_file, results_json_file, label_file_path]:
     assert Path(file_path).exists(), "%s not exist" % file_path
@@ -162,9 +162,10 @@ for img_relative_path, task, label in tokens:
     # refine bbox according by task
     bbox = [int(i) for i in det['bbox']]
     # expand the size to 30% according by the width
-    bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
-    bbox[2] = min(img_raw_width, bbox[2] * 1.3)
+
     if task == "neck_design_labels":
+        bbox[0] = max(bbox[0] - bbox[2] * 0.2, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.2)
         if bbox[1] > img_raw_height * 0.3:
             bbox[1] = max(0, bbox[1] - bbox[3] * 0.2)
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.2)
@@ -180,14 +181,36 @@ for img_relative_path, task, label in tokens:
         if bbox[1] > img_raw_height * 0.4:
             bbox[1] = max(0, bbox[1] - bbox[3] * 0.4)
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.4)
-    elif task in ['sleeve_length_labels', 'coat_length_labels']:
+    elif task in ['sleeve_length_labels']:
         if bbox[1] > img_raw_height * 0.4:
             bbox[1] = max(0, bbox[1] - bbox[3] * 0.5)
         bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
-    elif task in ['skirt_length_labels', 'pant_length_labels']:
-        bbox[1] = max(0, bbox[1] - bbox[3] * 0.3)
-        if bbox[3] < img_raw_height * 0.5:
-            bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.8)
+    elif task in ['coat_length_labels']:
+        if bbox[1] > img_raw_height * 0.4:
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.5)
+        bbox[3] = min(img_raw_height-bbox[1]-1, bbox[3] * 1.5)
+    elif task in ['skirt_length_labels']:
+        # wrong image id: ['69fc8936d8c04f2e30796ea90138966a.jpg']
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+
+        if bbox[1] > img_raw_height * 0.4:
+            bbox[1] = img_raw_height * 0.2
+        else:
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.3)
+        if bbox[3]+bbox[1] <= img_raw_height * 0.8:
+            bbox[3] = (img_raw_height-bbox[1]-1)*0.90
+        else:
+            bbox[3] = (img_raw_height-bbox[1]-1)*0.99
+    elif task in ['pant_length_labels']:
+        bbox[0] = max(bbox[0] - bbox[2] * 0.3, 0)
+        bbox[2] = min(img_raw_width, bbox[2] * 1.5)
+
+        if bbox[1] > img_raw_height * 0.4:
+            bbox[1] = img_raw_height * 0.2
+        else:
+            bbox[1] = max(0, bbox[1] - bbox[3] * 0.3)
+        bbox[3] = (img_raw_height-bbox[1]-1)*0.99
     else:
         raise RuntimeError
 
