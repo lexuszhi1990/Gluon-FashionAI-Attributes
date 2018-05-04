@@ -266,7 +266,7 @@ class Solver(object):
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
             net.save_params(saved_path.as_posix())
             logging.info('\nsave results at %s' % saved_path)
-            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=batch_size, num_workers=self.num_workers, loss_type=loss_type)
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=batch_size, num_workers=num_workers, loss_type=loss_type)
             # val_acc, val_map, val_loss = 0, 0, 0
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
