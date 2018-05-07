@@ -274,7 +274,7 @@ print("no dets matched %d/%d" % (no_dets_nums, total_nums))
 print("no exits number %d/%d" % (not_exist_nums, total_nums))
 
 for task in transfered_label_dict.keys():
-    if len(transfered_label_dict[task]) > 0:
+    if len(transfered_label_dict[task]) == 0:
         continue
 
     csv_file_path = Path(outout_path, 'Annotations', "%s.csv" % task)

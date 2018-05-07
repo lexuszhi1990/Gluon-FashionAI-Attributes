@@ -17,11 +17,11 @@ VERSION = 'v4'
 model_dict = config.MODEL_LIST[VERSION]
 task_list = ['collar_design_labels', 'skirt_length_labels', 'lapel_design_labels', 'neckline_design_labels', 'coat_length_labels', 'neck_design_labels', 'pant_length_labels', 'sleeve_length_labels']
 
-test_dataset_path = "/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.1"
-submission_path = '/data/david/fai_attr/submissions/round2/v1.2'
+test_dataset_path = "/data/david/fai_attr/transfered_data/ROUND2/RANK_V1.2"
+submission_path = '/data/david/fai_attr/submissions/round2/v1.3'
 
 # gpus = None
-gpus = [2]
+gpus = [1]
 cropped_predict=False
 
 solver = Solver(submission_path=submission_path)

@@ -33,14 +33,21 @@ transfered_label_dict = {'coat_length_labels': [],
               'sleeve_length_labels': []}
 
 # Train
-dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
-dataset_json_file = dataset_path + '/Annotations/label_coco.json'
-results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
-label_file_path = dataset_path + '/Annotations/label_without_head.csv'
-# with new crop methods
-# outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
+# dataset_path = '/data/david/fai_attr/raw_data/ROUND2/PURE_TRAIN_V1'
+# dataset_json_file = dataset_path + '/Annotations/label_coco.json'
+# results_json_file = dataset_path + '/Annotations/detections_label_coco_results.json'
+# label_file_path = dataset_path + '/Annotations/label_without_head.csv'
+# # with new crop methods
+# # outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.2'
+# # 1.3: remove the not exists samples
+# outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.3'
+
+dataset_path = '/data/david/fai_attr/raw_data/ROUND2/TRAIN_V1'
+dataset_json_file = dataset_path + '/Annotations/train_coco.json'
+results_json_file = dataset_path + '/Annotations/detections_train_coco_results.json'
+label_file_path = dataset_path + '/Annotations/train_without_head.csv'
 # 1.3: remove the not exists samples
-outout_path = '/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.3'
+outout_path = '/data/david/fai_attr/transfered_data/ROUND2/TRAIN_V1.1'
 
 # dataset_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1.json'
 # results_json_file = '/data/david/fai_attr/bak/gloun_data/detection_labels/validation_v1_detection_max_5.json'
@@ -274,7 +281,7 @@ print("no dets matched %d/%d" % (no_dets_nums, total_nums))
 print("no exits number %d/%d" % (not_exist_nums, total_nums))
 
 for task in transfered_label_dict.keys():
-    if len(transfered_label_dict[task]) > 0:
+    if len(transfered_label_dict[task]) == 0:
         continue
 
     csv_file_path = Path(outout_path, 'Annotations', "%s.csv" % task)

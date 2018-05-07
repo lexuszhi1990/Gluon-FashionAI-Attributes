@@ -267,7 +267,7 @@ config.MODEL_LIST = {
             'lr_steps' : [10,25,30,35,np.inf]
         },
         'coat_length_labels' : {
-            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-31-47266/coat_length_labels-2018-05-03-20-47-epoch-18.params',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-16-49-50624/coat_length_labels-2018-05-04-17-52-epoch-15.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [0,1],
@@ -311,7 +311,7 @@ config.MODEL_LIST = {
 
         },
         'sleeve_length_labels' : {
-            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-11-49-48917/sleeve_length_labels-2018-05-04-14-20-epoch-27.params',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-16-27-14786/sleeve_length_labels-2018-05-04-17-54-epoch-17.params',
             'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
             'gpus' : [2,3],
