@@ -211,119 +211,118 @@ config.MODEL_LIST = {
 
     "v4": {
         'collar_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-15-58023/collar_design_labels-2018-04-20-19-10-epoch-11.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-22-28163/collar_design_labels-2018-05-03-19-44-epoch-39.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [0],
-            'num_workers' : 6,
-            'batch_size' : 12,
+            'gpus' : [0, 1, 2, 3],
+            'num_workers' : 24,
+            'batch_size' : 8,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'skirt_length_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-51-91422/skirt_length_labels-2018-04-20-19-00-epoch-11.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-10-52-19712/skirt_length_labels-2018-05-04-13-09-epoch-39.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [1],
-            'num_workers' : 6,
-            'batch_size' : 6,
+            'gpus' : [4,5],
+            'num_workers' : 12,
+            'batch_size' : 8,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
         },
         'lapel_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-97706/lapel_design_labels-2018-04-20-18-37-epoch-18.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-19-50-81092/lapel_design_labels-2018-05-03-20-48-epoch-18.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [2],
-            'num_workers' : 6,
-            'batch_size' : 12,
-            'lr' : 0.001,
-            'wd' : 5e-4,
-            'momentum' : 0.9,
-            'lr_factor' : 0.75,
-            'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
-        },
-        'neckline_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-16-56-63802/neckline_design_labels-2018-04-20-19-37-epoch-17.params',
-            'network': 'densenet201',
-            'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [3],
-            'num_workers' : 6,
-            'batch_size' : 12,
-            'lr' : 0.001,
-            'wd' : 5e-4,
-            'momentum' : 0.9,
-            'lr_factor' : 0.75,
-            'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
-        },
-        'coat_length_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-10-3387/coat_length_labels-2018-04-20-19-50-epoch-11.params',
-            'network': 'densenet201',
-            'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [4],
-            'num_workers' : 6,
-            'batch_size' : 12,
-            'lr' : 0.001,
-            'wd' : 5e-4,
-            'momentum' : 0.9,
-            'lr_factor' : 0.75,
-            'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
-        },
-        'neck_design_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-22-16-30-82307/neck_design_labels-2018-04-22-17-12-epoch-39.params',
-            'network': 'densenet201',
-            'loss_type' : 'sfe', # [hinge/sfe]
-            # 'gpus' : [0, 1, 2, 3, 4, 5, 6, 7],
-            'gpus' : [4, 5, 6, 7],
+            'gpus' : [2, 3],
             'num_workers' : 6,
             'batch_size' : 10,
+            'lr' : 0.001,
+            'wd' : 5e-4,
+            'momentum' : 0.9,
+            'lr_factor' : 0.75,
+            'epochs' : 40,
+            'lr_steps' : [10,25,30,35,np.inf]
+        },
+        'neckline_design_labels' : {
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-18-31-83724/neckline_design_labels-2018-05-03-20-51-epoch-16.params',
+            'network': 'pretrained_densenet201',
+            'loss_type' : 'hinge', # [hinge/sfe]
+            'gpus' : [5],
+            'num_workers' : 6,
+            'batch_size' : 12,
+            'lr' : 0.001,
+            'wd' : 5e-4,
+            'momentum' : 0.9,
+            'lr_factor' : 0.75,
+            'epochs' : 40,
+            'lr_steps' : [10,25,30,35,np.inf]
+        },
+        'coat_length_labels' : {
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-16-49-50624/coat_length_labels-2018-05-04-17-52-epoch-15.params',
+            'network': 'pretrained_densenet201',
+            'loss_type' : 'hinge', # [hinge/sfe]
+            'gpus' : [0,1],
+            'num_workers' : 6,
+            'batch_size' : 10,
+            'lr' : 0.001,
+            'wd' : 5e-4,
+            'momentum' : 0.9,
+            'lr_factor' : 0.75,
+            'epochs' : 40,
+            'lr_steps' : [10,25,30,35,np.inf]
+        },
+        'neck_design_labels' : {
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-03-17-57-48502/neck_design_labels-2018-05-03-19-32-epoch-39.params',
+            'network': 'pretrained_densenet201',
+            'loss_type' : 'sfe', # [hinge/sfe]
+            'gpus' : [4,5],
+            'num_workers' : 12,
+            'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 1e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         },
         'pant_length_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-17-35-93141/pant_length_labels-2018-04-20-18-33-epoch-11.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-11-07-29483/pant_length_labels-2018-05-04-13-37-epoch-39.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [6],
-            'num_workers' : 6,
+            'gpus' : [4,5],
+            'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         },
         'sleeve_length_labels' : {
-            'model_path': '/data/david/fai_attr/gloun_data/ckpt/2018-04-20-18-12-4240/sleeve_length_labels-2018-04-20-19-44-epoch-13.params',
-            'network': 'densenet201',
+            'model_path': '/data/david/fai_attr/ckpt/2018-05-04-16-27-14786/sleeve_length_labels-2018-05-04-17-54-epoch-17.params',
+            'network': 'pretrained_densenet201',
             'loss_type' : 'hinge', # [hinge/sfe]
-            'gpus' : [7],
-            'num_workers' : 6,
+            'gpus' : [2,3],
+            'num_workers' : 12,
             'batch_size' : 12,
             'lr' : 0.001,
             'wd' : 5e-4,
             'momentum' : 0.9,
             'lr_factor' : 0.75,
             'epochs' : 40,
-            'lr_steps' : [10,20,25,30,35,np.inf]
+            'lr_steps' : [10,25,30,35,np.inf]
 
         }
     }

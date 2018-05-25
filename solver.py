@@ -9,9 +9,8 @@ from mxnet import gluon, image, nd
 from mxnet import autograd as ag
 
 from src import utils
-from src.symbol import get_pretrained_model
-
-os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
+# available symbols: [densenet121, densenet201, pretrained_densenet121, pretrained_densenet201]
+from src.symbol import get_symbol
 
 task_class_num_list = {
     'collar_design_labels': 5,
@@ -24,10 +23,10 @@ task_class_num_list = {
     'sleeve_length_labels': 9
 }
 
-CKPT_PATH = '/data/david/fai_attr/gloun_data/ckpt'
-DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/gloun_data/submission'
-DEFAULT_TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/train_v1"
-DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/val_v1"
+CKPT_PATH = '/data/david/fai_attr/ckpt'
+DEFAULT_SUBMISSION_PATH = '/data/david/fai_attr/submissions/default_round2'
+DEFAULT_TRAIN_DATASET_PATH = "/data/david/fai_attr/transfered_data/ROUND2/PURE_TRAIN_V1.1"
+DEFAULT_VAL_DATASET_PATH = "/data/david/fai_attr/transfered_data/ROUND1/val_v4"
 
 class Solver(object):
     def __init__(self, ckpt_path=None, submission_path=None, validation_path=None, training_path=None):
@@ -51,25 +50,29 @@ class Solver(object):
                 transform=utils.transform_train),
             batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, last_batch=last_batch_type)
 
-
-    def get_gluon_dataset(self, dataset_path, task, dataset_type='train'):
+    def get_gluon_dataset(self, dataset_path, task, batch_size, num_workers, dataset_type='train'):
         assert dataset_type in ['train', 'val', 'test'], "unknow dataset type %s" % dataset_type
-
         is_shuffle = True if dataset_type == 'train' else False
-        last_batch_type = 'keep' if dataset_type != 'train' else 'discard'
+        last_batch_type = 'keep' if dataset_type == 'test' else 'discard'
 
         fai_dataset = utils.FaiAttrDataset(dataset_path, task, dataset_type=dataset_type)
         return gluon.data.DataLoader(
-            fai_dataset, batch_size=self.batch_size, shuffle=is_shuffle, num_workers=self.num_workers, last_batch=last_batch_type)
+            fai_dataset, batch_size=batch_size, shuffle=is_shuffle, num_workers=num_workers, last_batch=last_batch_type)
 
-    def predict_cropped_images(self, dataset_path, model_path, task, gpus, network='densenet201'):
+    def predict_cropped_images(self, dataset_path, model_path, task, gpus, network='densenet201', loss_type='sfe'):
+
+        # with Path(dataset_path, 'Annotations/%s.csv' % task).open('r') as f:
+        #     self.task_tokens = [l.rstrip().split(',') for l in f.readlines()]
+        # self.task_tokens = [t for t in tokens if t[1] == task]
+
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
         ctx = self.get_ctx()[0]
 
-        net = get_pretrained_model(network, task_class_num_list[task], ctx)
+        net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
+
         for index, task_token in enumerate(self.task_tokens):
             img_path, raw_task = task_token[:2]
             assert raw_task == task, "task not match"
@@ -86,107 +89,134 @@ class Solver(object):
         f_out.close()
         logging.info("end predicting for %s, results saved at %s" % (task, results_path))
 
-    def predict_fully_images(self, dataset_path, model_path, task, gpus, network='densenet201'):
+    def predict_fully_images(self, dataset_path, model_path, task, gpus, network='densenet201', loss_type='sfe'):
+
+        with Path(dataset_path, 'Annotations/%s.csv' % task).open('r') as f:
+            task_tokens = [l.rstrip().split(',') for l in f.readlines()]
         results_path = self.output_submission_path.joinpath('%s.csv'%(task))
         f_out = results_path.open('w+')
-        ctx = self.get_ctx()[0]
 
-        net = get_pretrained_model(network, task_class_num_list[task], ctx)
+        ctx = self.get_ctx()[0]
+        tic = time.time()
+        net = get_symbol(network, task_class_num_list[task], ctx)
         net.load_params(model_path, ctx=ctx)
         logging.info("load model from %s" % model_path)
+
         for index, task_token in enumerate(task_tokens):
             img_path, raw_task = task_token[:2]
-            assert raw_task == task, "task not match"
+            assert raw_task == task, "task not match %s" % task
             with Path(dataset_path, img_path).open('rb') as f:
                 raw_img = f.read()
             img = image.imdecode(raw_img)
             data = utils.transform_fully_img(img)
             out = net(data.as_in_context(ctx))
-            out = nd.softmax(out)
+
+            if loss_type == 'sfe':
+                out = nd.softmax(out)
+            elif loss_type == 'hinge':
+                out = nd.softmax(out)
+            else:
+                raise RuntimeError('unknown loss type %s' % loss_type)
+
             pred_out = ';'.join(["%.8f"%(o) for o in out[0].asnumpy().tolist()])
-            line_out = ','.join([path, task, pred_out])
+            line_out = ','.join([img_path, task, pred_out])
             f_out.write(line_out + '\n')
             utils.progressbar(index, len(task_tokens))
-        f_out.close()
-        logging.info("finish predicting for %s, results are saved at %s" % (task, results_path))
 
-    def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=True):
+        f_out.close()
+
+        logging.info("finish predicting for %s, results are saved at %s | time costs: %.1fs" % (task, results_path, time.time() - tic))
+
+    def predict(self, dataset_path, model_path, task, gpus, network='densenet201', cropped_predict=False, loss_type='sfe'):
         logging.info('starting prediction for %s.' % task)
         self.gpus = gpus
+
         if not self.output_submission_path.exists():
             self.output_submission_path.mkdir()
         logging.info('submission path: %s' % self.output_submission_path)
-        with Path(dataset_path, 'Tests/question.csv').open('r') as f:
-            tokens = [l.rstrip().split(',') for l in f.readlines()]
-        self.task_tokens = [t for t in tokens if t[1] == task]
 
         if cropped_predict is True:
-            return self.predict_cropped_images(dataset_path, model_path, task, gpus, network)
+            return self.predict_cropped_images(dataset_path, model_path, task, gpus, network, loss_type)
         else:
-            return self.predict_fully_images(dataset_path, model_path, task, gpus, network)
+            return self.predict_fully_images(dataset_path, model_path, task, gpus, network, loss_type)
 
-    def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers):
+    def validate(self, symbol, model_path, task, network, gpus, batch_size, num_workers, loss_type='sfe'):
         logging.info('starting validating for %s.' % task)
+        tic = time.time()
+
         self.gpus = gpus
         ctx = self.get_ctx()
 
-        self.num_workers = num_workers
-        self.batch_size = batch_size
-
         if symbol is None:
-            net = get_pretrained_model(network, task_class_num_list[task], ctx)
+            net = get_symbol(network, task_class_num_list[task], ctx)
             net.load_params(model_path, ctx=ctx)
             logging.info("load model from %s" % model_path)
         else:
             net = symbol
 
-        val_data = self.get_image_folder_data(self.training_path ,task, dataset_type='train')
+        val_data = self.get_gluon_dataset(self.validation_path, task, batch_size, num_workers, dataset_type='val')
         logging.info("load validate dataset from %s" % (self.validation_path))
 
         metric = mx.metric.Accuracy()
-        L = gluon.loss.SoftmaxCrossEntropyLoss()
-        AP = 0.
-        AP_cnt = 0
-        val_loss = 0
+        sfe_loss = gluon.loss.SoftmaxCrossEntropyLoss()
+        hinge_loss = gluon.loss.HingeLoss()
+
+        val_loss = 0.0
+        pred_correct_count = 0
+        pred_count = 0
+
         for i, batch in enumerate(val_data):
+
             data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
             label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+            hinge_label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)
             outputs = [net(X) for X in data]
-            metric.update(label, outputs)
-            loss = [L(yhat, y) for yhat, y in zip(outputs, label)]
+
+            if loss_type == 'sfe':
+                loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
+            elif loss_type == 'hinge':
+                loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, hinge_label)]
+                outputs = [nd.softmax(X) for X in outputs]
+            else:
+                raise RuntimeError('unknown loss type %s' % loss_type)
+
             val_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
-            ap, cnt = utils.calculate_ap(label, outputs)
-            AP += ap
-            AP_cnt += cnt
+            metric.update(label, outputs)
+            batch_pred_correct_count, batch_pred_count = utils.calculate_basic_precision(label, outputs)
+            pred_count += batch_pred_count
+            pred_correct_count += batch_pred_correct_count
+
+            utils.progressbar(i, len(val_data)-1)
+
         _, val_acc = metric.get()
-        val_map, val_loss = AP / AP_cnt, val_loss / len(val_data)
-        logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f' % (task, val_acc, val_map, val_loss))
+        val_map, val_loss = pred_correct_count / pred_count, val_loss / len(val_data)
+        logging.info('[%s] Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' % (task, val_acc, val_map, val_loss, time.time() - tic))
+
         return ((val_acc, val_map, val_loss))
 
-    def train(self, task, model_name, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe'):
-
+    def train(self, task, network, epochs, lr, momentum, wd, lr_factor, lr_steps, gpus, batch_size, num_workers, loss_type='sfe', model_path=None, resume=False):
+        logging.info('Entrying the training for Task: %s' % (task))
         self.gpus = gpus
         ctx = self.get_ctx()
-
-        self.num_workers = num_workers
-        self.batch_size = batch_size * max(len(self.gpus), 1)
-        logging.info('Start Training for Task: %s' % (task))
 
         if not self.ckpt_path.exists():
             self.ckpt_path.mkdir()
             logging.info('create ckpt path: %s' % self.ckpt_path)
 
-        finetune_net = get_pretrained_model(model_name, task_class_num_list[task], ctx)
-
-        train_data = self.get_image_folder_data(self.training_path ,task, dataset_type='train')
+        train_data = self.get_gluon_dataset(self.training_path, task, batch_size, num_workers, dataset_type='train')
         logging.info("load training dataset from %s" % (self.training_path))
 
+        net = get_symbol(network, task_class_num_list[task], ctx)
+        if resume and Path(model_path).exists():
+            net.load_params(model_path, ctx=ctx)
+            logging.info("load model from %s" % (model_path))
+
         # Define Trainer
-        trainer = gluon.Trainer(finetune_net.collect_params(), 'sgd', {
-            'learning_rate': lr, 'momentum': momentum, 'wd': wd})
+        trainer = gluon.Trainer(net.collect_params(), 'sgd', {
+            'learning_rate': lr, 'momentum': momentum, 'wd': wd}, kvstore='device')
         metric = mx.metric.Accuracy()
         sfe_loss = gluon.loss.SoftmaxCrossEntropyLoss()
-        hing_loss = gluon.loss.HingeLoss()
+        hinge_loss = gluon.loss.HingeLoss()
         lr_counter = 0
         num_batch = len(train_data)
 
@@ -199,55 +229,46 @@ class Solver(object):
             tic = time.time()
             train_loss = 0
             metric.reset()
-            AP = 0.
-            AP_cnt = 0
+            pred_correct_count = 0
+            pred_count = 0
 
             for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
-                argmax_index_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
-                hinge_label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
+                hinge_label = gluon.utils.split_and_load(batch[2], ctx_list=ctx, batch_axis=0, even_split=False)
                 with ag.record():
-                    outputs = [finetune_net(X) for X in data]
+                    outputs = [net(X) for X in data]
 
                     if loss_type == 'sfe':
-                        label = argmax_index_label
                         loss = [sfe_loss(yhat, y) for yhat, y in zip(outputs, label)]
                     elif loss_type == 'hinge':
-                        label = hinge_label
-                        loss = [hing_loss(yhat, y) for yhat, y in zip(outputs, label)]
+                        loss = [hinge_loss(yhat, y) for yhat, y in zip(outputs, hinge_label)]
+                        outputs = [nd.softmax(X) for X in outputs]
                     else:
-                        raise RuntimeError('un avaliable loss type %s' % loss_type)
+                        raise RuntimeError('unknown loss type %s' % loss_type)
                 for l in loss:
                     l.backward()
-                trainer.step(self.batch_size)
+                trainer.step(batch_size)
                 train_loss += sum([l.mean().asscalar() for l in loss]) / len(loss)
-
                 metric.update(label, outputs)
 
-                if loss_type == 'sfe':
-                    ap, cnt = utils.calculate_ap(label, outputs)
-                elif loss_type == 'hinge':
-                    ap, cnt = utils.calculate_ap_full(label, outputs)
-                else:
-                    raise RuntimeError('un avaliable loss type %s' % loss_type)
-
-                AP += ap
-                AP_cnt += cnt
+                # ap, cnt = utils.calculate_ap(label, outputs)
+                batch_pred_correct_count, batch_pred_count = utils.calculate_basic_precision(label, outputs)
+                pred_count += batch_pred_count
+                pred_correct_count += batch_pred_correct_count
 
                 utils.progressbar(i, num_batch-1)
 
-            train_map = AP / AP_cnt
+            train_map = pred_correct_count / pred_count
             _, train_acc = metric.get()
             train_loss /= num_batch
 
             saved_path = self.ckpt_path.joinpath('%s-%s-epoch-%d.params' % (task, time.strftime("%Y-%m-%d-%H-%M", time.localtime(time.time())), epoch))
-            finetune_net.save_params(saved_path.as_posix())
-
-            val_acc, val_map, val_loss = self.validate(finetune_net, model_path=None, task=task, network=model_name, gpus=gpus, batch_size=self.batch_size, num_workers=self.num_workers)
+            net.save_params(saved_path.as_posix())
+            logging.info('\nsave results at %s' % saved_path)
+            val_acc, val_map, val_loss = self.validate(net, model_path=None, task=task, network=network, gpus=gpus, batch_size=batch_size, num_workers=num_workers, loss_type=loss_type)
             # val_acc, val_map, val_loss = 0, 0, 0
-
             logging.info('[Epoch %d] Train-acc: %.3f, mAP: %.3f, loss: %.3f | Val-acc: %.3f, mAP: %.3f, loss: %.3f | time: %.1fs' %
                      (epoch, train_acc, train_map, train_loss, val_acc, val_map, val_loss, time.time() - tic))
-            logging.info('\nsave results at %s' % saved_path)
 
-        return finetune_net
+        return net
